@@ -160,18 +160,6 @@ final class Installer {
 		$type = isset( $repo['type'] ) ? $repo['type'] : '';
 		$slug = isset( $repo['slug'] ) ? $repo['slug'] : '';
 
-		if ( 'plugin' !== $type && 'theme' !== $type ) {
-			return new \WP_Error( 'invalid_type', __( 'Invalid deployment type.', 'github-wp-deployer' ) );
-		}
-
-		if ( ! Slug::validate( $slug ) ) {
-			return new \WP_Error( 'invalid_slug', __( 'The destination slug is invalid.', 'github-wp-deployer' ) );
-		}
-
-		if ( GWPD_SLUG === $slug ) {
-			return new \WP_Error( 'self_replace', __( 'This plugin cannot replace itself in version 1.', 'github-wp-deployer' ) );
-		}
-
 		$sha = $this->github->resolve_ref( $repo['owner'], $repo['repo'], $repo['ref'] );
 
 		if ( is_wp_error( $sha ) ) {
@@ -215,6 +203,10 @@ final class Installer {
 			return $detected;
 		}
 
+		// Auto-detect is represented by an empty requested type. Use the inspected
+		// package type for the destination and persisted repository record.
+		$type = $detected['type'];
+
 		// The slug for an update must match the managed destination.
 		if ( isset( $repo['slug'] ) && '' !== $repo['slug'] ) {
 			$slug = $repo['slug'];
@@ -226,11 +218,21 @@ final class Installer {
 			}
 		}
 
+		if ( ! Slug::validate( $slug ) ) {
+			return new \WP_Error( 'invalid_slug', __( 'The destination slug is invalid.', 'github-wp-deployer' ) );
+		}
+
+		if ( GWPD_SLUG === $slug ) {
+			return new \WP_Error( 'self_replace', __( 'This plugin cannot replace itself in version 1.', 'github-wp-deployer' ) );
+		}
+
 		$main_file = isset( $repo['main_file'] ) && '' !== $repo['main_file'] ? $repo['main_file'] : $detected['main_file'];
 
 		$destination = $this->destination_path( $type, $slug );
 
-		$installed = $this->deploy_package( $repo, $detected, $root, $slug, $main_file, $destination, $force_overwrite );
+		// Ensure destination ownership checks use the detected type as well.
+		$repo['type'] = $type;
+		$installed    = $this->deploy_package( $repo, $detected, $root, $slug, $main_file, $destination, $force_overwrite );
 
 		if ( is_wp_error( $installed ) ) {
 			$this->log( $repo, $sha, 'deploy', 'failure', $user_id, $installed->get_error_message() );
@@ -440,15 +442,19 @@ final class Installer {
 				return new \WP_Error( 'zip_create_failed', __( 'Could not create the package archive.', 'github-wp-deployer' ) );
 			}
 
-			$base   = untrailingslashit( $source );
-			$length = strlen( $base ) + 1;
+			$base     = untrailingslashit( $source );
+			$top      = basename( $base );
+			$length   = strlen( $base ) + 1;
+			$zip_root = trailingslashit( $top );
+
+			$zip->addEmptyDir( $top );
 
 			$iterator = new \RecursiveIteratorIterator(
 				new \RecursiveDirectoryIterator( $base, \FilesystemIterator::SKIP_DOTS )
 			);
 
 			foreach ( $iterator as $file ) {
-				$local = substr( $file->getPathname(), $length );
+				$local = $zip_root . substr( $file->getPathname(), $length );
 
 				if ( $file->isDir() ) {
 					$zip->addEmptyDir( $local );
@@ -466,7 +472,11 @@ final class Installer {
 
 		$archive = new \PclZip( $dest );
 
-		$result = $archive->create( $source, PCLZIP_OPT_REMOVE_PATH, trailingslashit( $source ) );
+		$result = $archive->create(
+			$source,
+			PCLZIP_OPT_REMOVE_PATH,
+			dirname( untrailingslashit( $source ) )
+		);
 
 		if ( 0 === $result ) {
 			return new \WP_Error( 'zip_create_failed', __( 'Could not create the package archive.', 'github-wp-deployer' ) );

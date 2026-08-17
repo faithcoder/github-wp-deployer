@@ -317,6 +317,8 @@ final class AdminUI {
 		$result = $this->installer->deploy( $saved, get_current_user_id(), $force_overwrite );
 
 		if ( is_wp_error( $result ) ) {
+			// A failed first installation must not leave a phantom managed record.
+			$this->repos->remove( $saved['id'] );
 			wp_safe_redirect( $this->page_url( 'error', $result->get_error_message() ) );
 			exit;
 		}

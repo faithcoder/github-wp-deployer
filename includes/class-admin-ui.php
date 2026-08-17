@@ -250,6 +250,7 @@ final class AdminUI {
 		}
 
 		return array(
+			'url'          => $url_input,
 			'owner'        => $parsed['owner'],
 			'repo'         => $parsed['repo'],
 			'ref'          => $branch,
@@ -274,21 +275,30 @@ final class AdminUI {
 			exit;
 		}
 
-		$record['id'] = 'validate';
+		$validation_record = $record;
+		$record['id']      = 'validate';
 
 		$result = $this->installer->validate( $record );
 
 		if ( is_wp_error( $result ) ) {
-			set_transient( self::VALIDATION_TX, array( 'error' => $result->get_error_message() ), 15 * MINUTE_IN_SECONDS );
+			set_transient(
+				$this->validation_transient_key(),
+				array(
+					'error'  => $result->get_error_message(),
+					'record' => $validation_record,
+				),
+				15 * MINUTE_IN_SECONDS
+			);
 			wp_safe_redirect( $this->page_url( 'error', $result->get_error_message() ) );
 			exit;
 		}
 
 		set_transient(
-			self::VALIDATION_TX,
+			$this->validation_transient_key(),
 			array(
 				'sha'      => $result['sha'],
 				'detected' => $result['detected'],
+				'record'   => $validation_record,
 			),
 			15 * MINUTE_IN_SECONDS
 		);
@@ -310,6 +320,12 @@ final class AdminUI {
 			exit;
 		}
 
+		$validation = get_transient( $this->validation_transient_key() );
+		if ( ! is_array( $validation ) || isset( $validation['error'] ) || ! isset( $validation['record'] ) || $validation['record'] !== $record ) {
+			wp_safe_redirect( $this->page_url( 'error', __( 'Repository details changed or have not been validated. Validate this configuration again before installing.', 'github-wp-deployer' ) ) );
+			exit;
+		}
+
 		$force_overwrite = isset( $_POST['gwp_deployer_confirm_overwrite'] ) && '1' === sanitize_key( wp_unslash( $_POST['gwp_deployer_confirm_overwrite'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		$saved = $this->repos->add( $record );
@@ -322,6 +338,8 @@ final class AdminUI {
 			wp_safe_redirect( $this->page_url( 'error', $result->get_error_message() ) );
 			exit;
 		}
+
+		delete_transient( $this->validation_transient_key() );
 
 		wp_safe_redirect( $this->page_url( 'installed' ) );
 		exit;
@@ -478,6 +496,15 @@ final class AdminUI {
 		}
 
 		return $url;
+	}
+
+	/**
+	 * Current user's temporary repository-validation state key.
+	 *
+	 * @return string
+	 */
+	private function validation_transient_key() {
+		return self::VALIDATION_TX . '_' . get_current_user_id();
 	}
 
 	/**
@@ -732,7 +759,7 @@ final class AdminUI {
 	 * @return void
 	 */
 	private function render_validation_result() {
-		$validation = get_transient( self::VALIDATION_TX );
+		$validation = get_transient( $this->validation_transient_key() );
 
 		if ( ! is_array( $validation ) ) {
 			return;
@@ -763,6 +790,16 @@ final class AdminUI {
 	 * @return void
 	 */
 	private function render_add_form() {
+		$validation  = get_transient( $this->validation_transient_key() );
+		$record      = is_array( $validation ) && isset( $validation['record'] ) && is_array( $validation['record'] ) ? $validation['record'] : array();
+		$url         = isset( $record['url'] ) ? $record['url'] : '';
+		$branch      = isset( $record['ref'] ) ? $record['ref'] : 'main';
+		$ref_type    = isset( $record['ref_type'] ) ? $record['ref_type'] : 'branch';
+		$type        = isset( $record['type'] ) ? $record['type'] : '';
+		$slug        = isset( $record['slug'] ) ? $record['slug'] : '';
+		$subdir      = isset( $record['subdirectory'] ) ? $record['subdirectory'] : '';
+		$can_install = is_array( $validation ) && ! isset( $validation['error'] ) && isset( $validation['detected'], $validation['sha'], $validation['record'] );
+
 		echo '<h2>' . esc_html__( 'Add Repository', 'github-wp-deployer' ) . '</h2>';
 
 		echo '<form method="post">';
@@ -771,32 +808,32 @@ final class AdminUI {
 		echo '<table class="form-table" role="presentation"><tbody>';
 
 		echo '<tr><th scope="row"><label for="gwp_deployer_url">' . esc_html__( 'Repository URL', 'github-wp-deployer' ) . '</label></th><td>';
-		echo '<input type="text" name="gwp_deployer_url" id="gwp_deployer_url" class="regular-text" placeholder="https://github.com/owner/repository" required>';
+		echo '<input type="text" name="gwp_deployer_url" id="gwp_deployer_url" class="regular-text" value="' . esc_attr( $url ) . '" placeholder="https://github.com/owner/repository" required>';
 		echo '</td></tr>';
 
 		echo '<tr><th scope="row"><label for="gwp_deployer_branch">' . esc_html__( 'Branch or tag', 'github-wp-deployer' ) . '</label></th><td>';
-		echo '<input type="text" name="gwp_deployer_branch" id="gwp_deployer_branch" class="regular-text" value="main">';
+		echo '<input type="text" name="gwp_deployer_branch" id="gwp_deployer_branch" class="regular-text" value="' . esc_attr( $branch ) . '">';
 		echo ' <select name="gwp_deployer_ref_type">';
-		echo '<option value="branch">' . esc_html__( 'Branch', 'github-wp-deployer' ) . '</option>';
-		echo '<option value="tag">' . esc_html__( 'Tag', 'github-wp-deployer' ) . '</option>';
-		echo '<option value="release">' . esc_html__( 'Latest stable release', 'github-wp-deployer' ) . '</option>';
+		echo '<option value="branch" ' . selected( $ref_type, 'branch', false ) . '>' . esc_html__( 'Branch', 'github-wp-deployer' ) . '</option>';
+		echo '<option value="tag" ' . selected( $ref_type, 'tag', false ) . '>' . esc_html__( 'Tag', 'github-wp-deployer' ) . '</option>';
+		echo '<option value="release" ' . selected( $ref_type, 'release', false ) . '>' . esc_html__( 'Latest stable release', 'github-wp-deployer' ) . '</option>';
 		echo '</select>';
 		echo '</td></tr>';
 
 		echo '<tr><th scope="row"><label for="gwp_deployer_type">' . esc_html__( 'Deployment type', 'github-wp-deployer' ) . '</label></th><td>';
 		echo '<select name="gwp_deployer_type" id="gwp_deployer_type">';
-		echo '<option value="">' . esc_html__( 'Auto-detect', 'github-wp-deployer' ) . '</option>';
-		echo '<option value="plugin">' . esc_html__( 'Plugin', 'github-wp-deployer' ) . '</option>';
-		echo '<option value="theme">' . esc_html__( 'Theme', 'github-wp-deployer' ) . '</option>';
+		echo '<option value="" ' . selected( $type, '', false ) . '>' . esc_html__( 'Auto-detect', 'github-wp-deployer' ) . '</option>';
+		echo '<option value="plugin" ' . selected( $type, 'plugin', false ) . '>' . esc_html__( 'Plugin', 'github-wp-deployer' ) . '</option>';
+		echo '<option value="theme" ' . selected( $type, 'theme', false ) . '>' . esc_html__( 'Theme', 'github-wp-deployer' ) . '</option>';
 		echo '</select>';
 		echo '</td></tr>';
 
 		echo '<tr><th scope="row"><label for="gwp_deployer_slug">' . esc_html__( 'Destination slug', 'github-wp-deployer' ) . '</label></th><td>';
-		echo '<input type="text" name="gwp_deployer_slug" id="gwp_deployer_slug" class="regular-text" placeholder="' . esc_attr__( 'Optional; derived from package name when blank', 'github-wp-deployer' ) . '">';
+		echo '<input type="text" name="gwp_deployer_slug" id="gwp_deployer_slug" class="regular-text" value="' . esc_attr( $slug ) . '" placeholder="' . esc_attr__( 'Optional; derived from package name when blank', 'github-wp-deployer' ) . '">';
 		echo '</td></tr>';
 
 		echo '<tr><th scope="row"><label for="gwp_deployer_subdirectory">' . esc_html__( 'Subdirectory', 'github-wp-deployer' ) . '</label></th><td>';
-		echo '<input type="text" name="gwp_deployer_subdirectory" id="gwp_deployer_subdirectory" class="regular-text" placeholder="' . esc_attr__( 'Optional; for monorepos', 'github-wp-deployer' ) . '">';
+		echo '<input type="text" name="gwp_deployer_subdirectory" id="gwp_deployer_subdirectory" class="regular-text" value="' . esc_attr( $subdir ) . '" placeholder="' . esc_attr__( 'Optional; for monorepos', 'github-wp-deployer' ) . '">';
 		echo '</td></tr>';
 
 		echo '</tbody></table>';
@@ -806,9 +843,11 @@ final class AdminUI {
 		echo '<button type="submit" name="gwp_deployer_action" value="validate_repo" class="button button-secondary">';
 		echo esc_html__( 'Validate Repository', 'github-wp-deployer' );
 		echo '</button> ';
-		echo '<button type="submit" name="gwp_deployer_action" value="install" class="button button-primary">';
-		echo esc_html__( 'Install', 'github-wp-deployer' );
-		echo '</button>';
+		if ( $can_install ) {
+			echo '<button type="submit" name="gwp_deployer_action" value="install" class="button button-primary">';
+			echo esc_html__( 'Install', 'github-wp-deployer' );
+			echo '</button>';
+		}
 
 		echo '</form>';
 	}

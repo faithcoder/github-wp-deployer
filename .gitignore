@@ -1,0 +1,6 @@
+/vendor/
+/vendor/bin/
+/composer.lock
+.phpunit.result.cache
+.DS_Store
+*.log

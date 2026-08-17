@@ -1,0 +1,15 @@
+.gwp-deployer .form-table th {
+	width: 200px;
+}
+
+.gwp-deployer .gwp-deployer-actions form {
+	margin-right: 2px;
+}
+
+.gwp-deployer .gwp-deployer-secret td {
+	background: #fef8ee;
+}
+
+.gwp-deployer .notice.inline {
+	margin: 8px 0;
+}

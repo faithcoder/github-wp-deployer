@@ -100,7 +100,7 @@ final class GitHubAuth {
 	 * @return string
 	 */
 	public function callback_url() {
-		return admin_url( 'admin-post.php' );
+		return add_query_arg( 'action', self::ACTION_CALLBACK, admin_url( 'admin-post.php' ) );
 	}
 
 	/**
@@ -150,7 +150,9 @@ final class GitHubAuth {
 			exit;
 		}
 
-		wp_safe_redirect( $this->connect_url() );
+		// The destination is the fixed GitHub OAuth endpoint built by connect_url().
+		// wp_safe_redirect() rejects external hosts and would send the user back to wp-admin.
+		wp_redirect( $this->connect_url() ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 		exit;
 	}
 
@@ -254,7 +256,7 @@ final class GitHubAuth {
 	 * @return string
 	 */
 	private function settings_page_url( $notice = '' ) {
-		$url = admin_url( 'admin.php?page=' . GWPD_SLUG );
+		$url = add_query_arg( 'tab', 'connection', admin_url( 'admin.php?page=' . GWPD_SLUG ) );
 
 		if ( '' !== $notice ) {
 			$url = add_query_arg( 'gwp_deployer_notice', rawurlencode( $notice ), $url );

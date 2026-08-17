@@ -50,7 +50,7 @@ Local development → feature branch → pull request → merge into main
 
 1. GitHub → Settings → Developer settings → OAuth Apps → New OAuth App.
 2. Set **Authorization callback URL** to your site's
-   `https://example.com/wp-admin/admin-post.php` (the exact URL is shown on the
+   `https://example.com/wp-admin/admin-post.php?action=gwp_deployer_oauth_callback` (the exact URL is shown on the
    plugin settings screen).
 3. Enter the credentials in one of two ways:
 

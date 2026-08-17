@@ -157,7 +157,7 @@ final class AdminUI {
 		switch ( $action ) {
 			case 'disconnect':
 				$this->auth->disconnect();
-				wp_safe_redirect( $this->page_url( 'disconnected' ) );
+				wp_safe_redirect( $this->page_url( 'disconnected', '', 'connection' ) );
 				exit;
 
 			case 'validate_repo':
@@ -186,7 +186,7 @@ final class AdminUI {
 
 			case 'clear_logs':
 				$this->logger->clear();
-				wp_safe_redirect( $this->page_url( 'logs_cleared' ) );
+				wp_safe_redirect( $this->page_url( 'logs_cleared', '', 'logs' ) );
 				exit;
 
 			case 'save_oauth':
@@ -427,7 +427,13 @@ final class AdminUI {
 			$this->settings->save_client_secret( $client_secret );
 		}
 
-		wp_safe_redirect( $this->page_url( 'updated' ) );
+		if ( $this->auth->is_configured() ) {
+			// Saving valid credentials should continue directly into GitHub authorization.
+			wp_redirect( $this->auth->connect_url() ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+			exit;
+		}
+
+		wp_safe_redirect( $this->page_url( 'missing_config', '', 'connection' ) );
 		exit;
 	}
 
@@ -442,7 +448,7 @@ final class AdminUI {
 		$this->settings->set_log_limit( $limit );
 		$this->settings->set_delete_on_uninstall( isset( $_POST['gwp_deployer_delete_on_uninstall'] ) && '1' === sanitize_key( wp_unslash( $_POST['gwp_deployer_delete_on_uninstall'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
-		wp_safe_redirect( $this->page_url( 'updated' ) );
+		wp_safe_redirect( $this->page_url( 'updated', '', 'settings' ) );
 		exit;
 	}
 
@@ -451,10 +457,15 @@ final class AdminUI {
 	 *
 	 * @param string $notice  Notice key.
 	 * @param string $message Optional message.
+	 * @param string $tab     Optional settings tab.
 	 * @return string
 	 */
-	private function page_url( $notice = '', $message = '' ) {
+	private function page_url( $notice = '', $message = '', $tab = '' ) {
 		$url = admin_url( 'admin.php?page=' . GWPD_SLUG );
+
+		if ( '' !== $tab ) {
+			$url = add_query_arg( 'tab', sanitize_key( $tab ), $url );
+		}
 
 		if ( '' !== $notice ) {
 			$url = add_query_arg( 'gwp_deployer_notice', rawurlencode( $notice ), $url );
@@ -525,15 +536,67 @@ final class AdminUI {
 		echo '<div class="wrap gwp-deployer">';
 		echo '<h1>' . esc_html__( 'GitHub Theme & Plugin Deployer', 'github-wp-deployer' ) . '</h1>';
 
-		$this->render_connection();
-		$this->render_oauth();
-		$this->render_validation_result();
-		$this->render_add_form();
-		$this->render_repos_table();
-		$this->render_logs();
-		$this->render_settings();
+		$tab = $this->current_tab();
+		$this->render_tabs( $tab );
+
+		switch ( $tab ) {
+			case 'connection':
+				$this->render_connection();
+				$this->render_oauth();
+				break;
+
+			case 'logs':
+				$this->render_logs();
+				break;
+
+			case 'settings':
+				$this->render_settings();
+				break;
+
+			case 'repositories':
+			default:
+				$this->render_validation_result();
+				$this->render_add_form();
+				$this->render_repos_table();
+				break;
+		}
 
 		echo '</div>';
+	}
+
+	/**
+	 * Get the selected settings tab.
+	 *
+	 * @return string
+	 */
+	private function current_tab() {
+		$tab     = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'repositories'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$allowed = array( 'repositories', 'connection', 'logs', 'settings' );
+
+		return in_array( $tab, $allowed, true ) ? $tab : 'repositories';
+	}
+
+	/**
+	 * Render the settings page tab navigation.
+	 *
+	 * @param string $current Current tab key.
+	 * @return void
+	 */
+	private function render_tabs( $current ) {
+		$tabs = array(
+			'repositories' => __( 'Repositories', 'github-wp-deployer' ),
+			'connection'   => __( 'GitHub Connection', 'github-wp-deployer' ),
+			'logs'         => __( 'Deployment Log', 'github-wp-deployer' ),
+			'settings'     => __( 'Settings', 'github-wp-deployer' ),
+		);
+
+		echo '<nav class="nav-tab-wrapper gwp-deployer-tabs" aria-label="' . esc_attr__( 'GitHub Deployer sections', 'github-wp-deployer' ) . '">';
+		foreach ( $tabs as $key => $label ) {
+			$url   = add_query_arg( 'tab', $key, admin_url( 'admin.php?page=' . GWPD_SLUG ) );
+			$class = 'nav-tab' . ( $current === $key ? ' nav-tab-active' : '' );
+			printf( '<a class="%1$s" href="%2$s">%3$s</a>', esc_attr( $class ), esc_url( $url ), esc_html( $label ) );
+		}
+		echo '</nav>';
 	}
 
 	/**
@@ -570,7 +633,7 @@ final class AdminUI {
 			);
 		}
 
-		echo '<p class="gwp-deployer-connect-row">';
+		echo '<div class="gwp-deployer-connect-row">';
 		if ( ! $this->settings->is_connected() ) {
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline;">';
 			wp_nonce_field( 'gwp_deployer_connect' );
@@ -596,7 +659,7 @@ final class AdminUI {
 			submit_button( __( 'Disconnect GitHub', 'github-wp-deployer' ), 'secondary', 'submit', false );
 			echo '</form>';
 		}
-		echo '</p>';
+		echo '</div>';
 
 		if ( ! $this->settings->token_is_encrypted() && $this->settings->is_connected() ) {
 			echo '<div class="notice notice-warning inline"><p>';
@@ -738,18 +801,12 @@ final class AdminUI {
 
 		echo '<p><label><input type="checkbox" name="gwp_deployer_confirm_overwrite" value="1"> ' . esc_html__( 'Overwrite an existing unmanaged theme or plugin at the destination.', 'github-wp-deployer' ) . '</label></p>';
 
-		submit_button( __( 'Validate Repository', 'github-wp-deployer' ), 'secondary', 'gwp_deployer_action', false, array( 'value' => 'validate_repo' ) );
-		echo ' ';
-		submit_button(
-			__( 'Install', 'github-wp-deployer' ),
-			'primary',
-			'gwp_deployer_action2',
-			false,
-			array(
-				'name'  => 'gwp_deployer_action',
-				'value' => 'install',
-			)
-		);
+		echo '<button type="submit" name="gwp_deployer_action" value="validate_repo" class="button button-secondary">';
+		echo esc_html__( 'Validate Repository', 'github-wp-deployer' );
+		echo '</button> ';
+		echo '<button type="submit" name="gwp_deployer_action" value="install" class="button button-primary">';
+		echo esc_html__( 'Install', 'github-wp-deployer' );
+		echo '</button>';
 
 		echo '</form>';
 	}

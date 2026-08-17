@@ -40,7 +40,7 @@ account has access.
 
 1. Visit https://github.com/settings/developers and click "New OAuth App".
 2. Set the homepage and callback URLs. The callback URL is shown on the plugin
-   settings screen and is typically `https://your-site.example/wp-admin/admin-post.php`.
+   settings screen and is typically `https://your-site.example/wp-admin/admin-post.php?action=gwp_deployer_oauth_callback`.
 3. Copy the Client ID and Client Secret into the plugin's GitHub OAuth App
    section, or into `wp-config.php`:
 

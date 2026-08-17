@@ -55,7 +55,11 @@ final class GitHubAuth {
 	 * @return string
 	 */
 	public function client_id() {
-		return defined( 'GWPD_GITHUB_CLIENT_ID' ) ? (string) GWPD_GITHUB_CLIENT_ID : '';
+		if ( defined( 'GWPD_GITHUB_CLIENT_ID' ) && '' !== (string) GWPD_GITHUB_CLIENT_ID ) {
+			return (string) GWPD_GITHUB_CLIENT_ID;
+		}
+
+		return $this->settings->get_client_id();
 	}
 
 	/**
@@ -64,7 +68,21 @@ final class GitHubAuth {
 	 * @return string
 	 */
 	public function client_secret() {
-		return defined( 'GWPD_GITHUB_CLIENT_SECRET' ) ? (string) GWPD_GITHUB_CLIENT_SECRET : '';
+		if ( defined( 'GWPD_GITHUB_CLIENT_SECRET' ) && '' !== (string) GWPD_GITHUB_CLIENT_SECRET ) {
+			return (string) GWPD_GITHUB_CLIENT_SECRET;
+		}
+
+		return $this->settings->get_client_secret();
+	}
+
+	/**
+	 * Whether the client credentials were provided via wp-config constants.
+	 *
+	 * @return bool
+	 */
+	public function uses_constants() {
+		return ( defined( 'GWPD_GITHUB_CLIENT_ID' ) && '' !== (string) GWPD_GITHUB_CLIENT_ID )
+			|| ( defined( 'GWPD_GITHUB_CLIENT_SECRET' ) && '' !== (string) GWPD_GITHUB_CLIENT_SECRET );
 	}
 
 	/**

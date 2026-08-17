@@ -24,6 +24,8 @@ if ( '1' === get_option( 'gwp_deployer_delete_on_uninstall', '' ) ) {
 		'gwp_deployer_delete_on_uninstall',
 		'gwp_deployer_log_limit',
 		'gwp_deployer_webhook_deliveries',
+		'gwp_deployer_client_id',
+		'gwp_deployer_client_secret',
 	);
 
 	foreach ( $options as $option ) {

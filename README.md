@@ -52,7 +52,11 @@ Local development → feature branch → pull request → merge into main
 2. Set **Authorization callback URL** to your site's
    `https://example.com/wp-admin/admin-post.php` (the exact URL is shown on the
    plugin settings screen).
-3. Add to `wp-config.php`:
+3. Enter the credentials in one of two ways:
+
+   * On **Tools → GitHub Deployer → GitHub OAuth App** (stored in the
+     database; the client secret is encrypted and never displayed), or
+   * In `wp-config.php`, which takes precedence over the settings screen:
 
 ```php
 define( 'GWPD_GITHUB_CLIENT_ID', '...' );

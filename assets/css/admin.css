@@ -13,3 +13,29 @@
 .gwp-deployer .notice.inline {
 	margin: 8px 0;
 }
+
+.gwp-deployer .gwp-deployer-authorize {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.gwp-deployer .gwp-deployer-authorize svg {
+	display: block;
+}
+
+.gwp-deployer .gwp-deployer-connect-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.gwp-deployer .gwp-deployer-steps {
+	margin: 8px 0 12px;
+	padding-left: 20px;
+}
+
+.gwp-deployer .gwp-deployer-steps li {
+	margin-bottom: 4px;
+}

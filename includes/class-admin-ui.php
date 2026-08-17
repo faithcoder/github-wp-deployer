@@ -189,6 +189,10 @@ final class AdminUI {
 				wp_safe_redirect( $this->page_url( 'logs_cleared' ) );
 				exit;
 
+			case 'save_oauth':
+				$this->action_save_oauth();
+				break;
+
 			case 'save_settings':
 				$this->action_save_settings();
 				break;
@@ -412,6 +416,26 @@ final class AdminUI {
 	 *
 	 * @return void
 	 */
+	private function action_save_oauth() {
+		// Nonce verified in handle_actions() before dispatch.
+		$client_id     = isset( $_POST['gwp_deployer_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['gwp_deployer_client_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$client_secret = isset( $_POST['gwp_deployer_client_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['gwp_deployer_client_secret'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		$this->settings->save_client_id( $client_id );
+
+		if ( '' !== $client_secret ) {
+			$this->settings->save_client_secret( $client_secret );
+		}
+
+		wp_safe_redirect( $this->page_url( 'updated' ) );
+		exit;
+	}
+
+	/**
+	 * Save general settings.
+	 *
+	 * @return void
+	 */
 	private function action_save_settings() {
 		$limit = isset( $_POST['gwp_deployer_log_limit'] ) ? absint( wp_unslash( $_POST['gwp_deployer_log_limit'] ) ) : 100; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
@@ -502,6 +526,7 @@ final class AdminUI {
 		echo '<h1>' . esc_html__( 'GitHub Theme & Plugin Deployer', 'github-wp-deployer' ) . '</h1>';
 
 		$this->render_connection();
+		$this->render_oauth();
 		$this->render_validation_result();
 		$this->render_add_form();
 		$this->render_repos_table();
@@ -533,7 +558,7 @@ final class AdminUI {
 
 		if ( ! $this->auth->is_configured() ) {
 			echo '<div class="notice notice-warning inline"><p>';
-			echo esc_html__( 'GitHub OAuth is not configured. Add these constants to wp-config.php:', 'github-wp-deployer' );
+			echo esc_html__( 'GitHub OAuth is not configured. Add your credentials in the GitHub OAuth App section below, or define them in wp-config.php:', 'github-wp-deployer' );
 			echo '<br><code>define( \'GWPD_GITHUB_CLIENT_ID\', \'...\' );</code>';
 			echo '<br><code>define( \'GWPD_GITHUB_CLIENT_SECRET\', \'...\' );</code>';
 			echo '</p></div>';
@@ -545,13 +570,23 @@ final class AdminUI {
 			);
 		}
 
-		echo '<p>';
-		if ( ! $this->settings->is_connected() && $this->auth->is_configured() ) {
+		echo '<p class="gwp-deployer-connect-row">';
+		if ( ! $this->settings->is_connected() ) {
 			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline;">';
 			wp_nonce_field( 'gwp_deployer_connect' );
 			echo '<input type="hidden" name="action" value="' . esc_attr( GitHubAuth::ACTION_CONNECT ) . '">';
-			submit_button( __( 'Connect GitHub', 'github-wp-deployer' ), 'primary', 'submit', false );
-			echo '</form> ';
+
+			if ( $this->auth->is_configured() ) {
+				echo '<button type="submit" class="button button-primary gwp-deployer-authorize">';
+				echo '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>';
+				echo '<span>' . esc_html__( 'Authorize with GitHub', 'github-wp-deployer' ) . '</span>';
+				echo '</button> ';
+			} else {
+				echo '<button type="button" class="button button-primary" disabled>' . esc_html__( 'Authorize with GitHub', 'github-wp-deployer' ) . '</button>';
+				echo ' <span class="description">' . esc_html__( 'Add your OAuth App credentials below to enable this button.', 'github-wp-deployer' ) . '</span>';
+			}
+
+			echo '</form>';
 		}
 
 		if ( $this->settings->is_connected() ) {
@@ -570,6 +605,60 @@ final class AdminUI {
 		}
 
 		echo '<p class="description">' . esc_html__( 'Connecting requests the "repo" scope so private repositories can be read. Private repositories must be accessible to the connected GitHub account.', 'github-wp-deployer' ) . '</p>';
+	}
+
+	/**
+	 * Render the GitHub OAuth App credential fields.
+	 *
+	 * @return void
+	 */
+	private function render_oauth() {
+		echo '<h2>' . esc_html__( 'GitHub OAuth App', 'github-wp-deployer' ) . '</h2>';
+
+		echo '<ol class="gwp-deployer-steps">';
+		printf(
+			'<li>%s <a href="%s" target="_blank" rel="noopener">%s</a> %s</li>',
+			esc_html__( 'Go to', 'github-wp-deployer' ),
+			esc_url( 'https://github.com/settings/developers' ),
+			esc_html__( 'GitHub → Settings → Developer settings → OAuth Apps', 'github-wp-deployer' ),
+			esc_html__( 'and click "New OAuth App".', 'github-wp-deployer' )
+		);
+		printf(
+			'<li>%s <code>%s</code></li>',
+			esc_html__( 'Set the Authorization callback URL to:', 'github-wp-deployer' ),
+			esc_html( $this->auth->callback_url() )
+		);
+		echo '<li>' . esc_html__( 'Click "Register application", then copy the Client ID.', 'github-wp-deployer' ) . '</li>';
+		echo '<li>' . esc_html__( 'Click "Generate a new client secret" and copy the Client Secret.', 'github-wp-deployer' ) . '</li>';
+		echo '</ol>';
+
+		if ( $this->auth->uses_constants() ) {
+			echo '<div class="notice notice-info inline"><p>';
+			echo esc_html__( 'Credentials defined with GWPD_GITHUB_CLIENT_ID and GWPD_GITHUB_CLIENT_SECRET in wp-config.php take precedence over these fields.', 'github-wp-deployer' );
+			echo '</p></div>';
+		} else {
+			echo '<p class="description">' . esc_html__( 'Paste the Client ID and Client Secret below. You can also define them in wp-config.php, which takes precedence.', 'github-wp-deployer' ) . '</p>';
+		}
+
+		echo '<form method="post">';
+		wp_nonce_field( self::ACTION_NONCE );
+		echo '<input type="hidden" name="gwp_deployer_action" value="save_oauth">';
+
+		echo '<table class="form-table" role="presentation"><tbody>';
+
+		echo '<tr><th scope="row"><label for="gwp_deployer_client_id">' . esc_html__( 'Client ID', 'github-wp-deployer' ) . '</label></th><td>';
+		echo '<input type="text" name="gwp_deployer_client_id" id="gwp_deployer_client_id" class="regular-text" value="' . esc_attr( $this->auth->client_id() ) . '">';
+		echo '</td></tr>';
+
+		echo '<tr><th scope="row"><label for="gwp_deployer_client_secret">' . esc_html__( 'Client Secret', 'github-wp-deployer' ) . '</label></th><td>';
+		echo '<input type="password" name="gwp_deployer_client_secret" id="gwp_deployer_client_secret" class="regular-text" autocomplete="off" placeholder="' . esc_attr__( 'Leave blank to keep the current secret', 'github-wp-deployer' ) . '">';
+		echo '<p class="description">' . esc_html__( 'The stored secret is never displayed.', 'github-wp-deployer' ) . '</p>';
+		echo '</td></tr>';
+
+		echo '</tbody></table>';
+
+		submit_button( __( 'Save OAuth Credentials', 'github-wp-deployer' ) );
+		echo '</form>';
 	}
 
 	/**

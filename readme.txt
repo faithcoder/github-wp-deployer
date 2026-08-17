@@ -32,7 +32,8 @@ account has access.
 1. Upload the `github-wp-deployer` folder to `/wp-content/plugins/`, or install
    the ZIP via Plugins → Add New → Upload Plugin.
 2. Activate the plugin.
-3. Define your GitHub OAuth credentials in `wp-config.php` (see below).
+3. Define your GitHub OAuth credentials — either on the settings page
+   (Tools → GitHub Deployer → GitHub OAuth App) or in `wp-config.php` (see below).
 4. Go to Tools → GitHub Deployer.
 
 == GitHub OAuth App setup ==
@@ -40,12 +41,14 @@ account has access.
 1. Visit https://github.com/settings/developers and click "New OAuth App".
 2. Set the homepage and callback URLs. The callback URL is shown on the plugin
    settings screen and is typically `https://your-site.example/wp-admin/admin-post.php`.
-3. Copy the Client ID and Client Secret into `wp-config.php`:
+3. Copy the Client ID and Client Secret into the plugin's GitHub OAuth App
+   section, or into `wp-config.php`:
 
 `define( 'GWPD_GITHUB_CLIENT_ID', 'your-client-id' );`
 `define( 'GWPD_GITHUB_CLIENT_SECRET', 'your-client-secret' );`
 
-The client secret is never stored or displayed by the plugin.
+`wp-config.php` constants take precedence over the settings screen. The client
+secret is never stored or displayed in plain text.
 
 == Webhook setup ==
 

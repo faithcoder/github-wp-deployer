@@ -33,11 +33,18 @@
 	}
 
 	function statusElement( form ) {
+		var existing = document.querySelector( '.gwp-deployer-form-status' );
+		if ( existing ) {
+			existing.remove();
+		}
+
 		var status = document.createElement( 'span' );
 		status.className = 'gwp-deployer-form-status';
 		status.setAttribute( 'role', 'status' );
 		status.setAttribute( 'aria-live', 'polite' );
-		form.appendChild( status );
+		var actions = form.closest( '.gwp-deployer-actions' );
+		var actionStatus = actions ? actions.querySelector( '.gwp-deployer-action-status' ) : null;
+		( actionStatus || form ).appendChild( status );
 		return status;
 	}
 

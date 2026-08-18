@@ -564,10 +564,15 @@ final class AdminUI {
 		}
 
 		echo '<div class="wrap gwp-deployer">';
-		echo '<h1>' . esc_html__( 'GitHub Theme & Plugin Deployer', 'github-wp-deployer' ) . '</h1>';
+		echo '<div class="gwp-deployer-header">';
+		echo '<div><h1>' . esc_html__( 'GitHub Theme & Plugin Deployer', 'github-wp-deployer' ) . '</h1>';
+		echo '<p>' . esc_html__( 'Install, track, and deploy WordPress packages directly from GitHub.', 'github-wp-deployer' ) . '</p></div>';
+		echo '<span class="gwp-deployer-header__mark dashicons dashicons-cloud-upload" aria-hidden="true"></span>';
+		echo '</div>';
 
 		$tab = $this->current_tab();
 		$this->render_tabs( $tab );
+		echo '<main class="gwp-deployer-panel">';
 
 		switch ( $tab ) {
 			case 'connection':
@@ -590,6 +595,7 @@ final class AdminUI {
 				$this->render_repos_table();
 				break;
 		}
+		echo '</main>';
 
 		echo '</div>';
 	}
@@ -869,7 +875,8 @@ final class AdminUI {
 			return;
 		}
 
-		echo '<table class="widefat striped">';
+		echo '<div class="gwp-deployer-table-wrap">';
+		echo '<table class="widefat striped gwp-deployer-table">';
 		echo '<thead><tr>';
 
 		$headings = array(
@@ -893,6 +900,7 @@ final class AdminUI {
 		}
 
 		echo '</tbody></table>';
+		echo '</div>';
 	}
 
 	/**
@@ -939,7 +947,9 @@ final class AdminUI {
 		echo '<td>' . esc_html( isset( $repo['remote_sha'] ) && '' !== $repo['remote_sha'] ? substr( $repo['remote_sha'], 0, 7 ) : '—' ) . '</td>';
 		echo '<td><code>' . esc_html( isset( $repo['deployed_sha'] ) ? substr( $repo['deployed_sha'], 0, 7 ) : '—' ) . '</code></td>';
 
-		echo '<td>' . esc_html( $this->status_label( $status ) ) . '</td>';
+		echo '<td><span class="gwp-deployer-status gwp-deployer-status--' . esc_attr( sanitize_html_class( $status ) ) . '">';
+		echo esc_html( $this->status_label( $status ) );
+		echo '</span></td>';
 
 		echo '<td class="gwp-deployer-actions">';
 
@@ -971,6 +981,7 @@ final class AdminUI {
 		echo '<input type="hidden" name="gwp_deployer_action" value="remove_repo">';
 		echo '<button class="button button-small button-link-delete">' . esc_html__( 'Remove', 'github-wp-deployer' ) . '</button>';
 		echo '</form>';
+		echo '<div class="gwp-deployer-action-status"></div>';
 
 		echo '<br>';
 

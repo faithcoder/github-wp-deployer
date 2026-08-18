@@ -1,21 +1,208 @@
-.gwp-deployer .form-table th {
-	width: 200px;
+.gwp-deployer {
+	--gwp-accent: #2563eb;
+	--gwp-accent-dark: #1d4ed8;
+	--gwp-border: #dfe3e8;
+	--gwp-muted: #646970;
+	--gwp-surface: #fff;
+	max-width: 1280px;
 }
 
-.gwp-deployer .gwp-deployer-actions form {
-	margin-right: 2px;
+.gwp-deployer .gwp-deployer-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	margin: 20px 0 22px;
 }
 
-.gwp-deployer .gwp-deployer-secret td {
-	background: #fef8ee;
+.gwp-deployer .gwp-deployer-header h1 {
+	margin: 0 0 5px;
+	font-size: 28px;
+	font-weight: 650;
+	line-height: 1.2;
 }
 
-.gwp-deployer .notice.inline {
-	margin: 8px 0;
+.gwp-deployer .gwp-deployer-header p {
+	margin: 0;
+	color: var(--gwp-muted);
+	font-size: 14px;
+}
+
+.gwp-deployer .gwp-deployer-header__mark {
+	display: grid;
+	width: 48px;
+	height: 48px;
+	place-items: center;
+	border-radius: 13px;
+	background: linear-gradient(135deg, var(--gwp-accent), #7c3aed);
+	color: #fff;
+	box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
+	font-size: 24px;
 }
 
 .gwp-deployer .gwp-deployer-tabs {
-	margin-bottom: 20px;
+	margin: 0;
+	padding: 0 16px;
+	border-bottom: 1px solid var(--gwp-border);
+	background: transparent;
+}
+
+.gwp-deployer .gwp-deployer-tabs .nav-tab {
+	margin: 0 4px -1px 0;
+	padding: 11px 16px;
+	border: 0;
+	border-bottom: 3px solid transparent;
+	background: transparent;
+	color: #50575e;
+	font-weight: 500;
+}
+
+.gwp-deployer .gwp-deployer-tabs .nav-tab:hover,
+.gwp-deployer .gwp-deployer-tabs .nav-tab:focus {
+	color: var(--gwp-accent);
+	background: #f6f8fa;
+}
+
+.gwp-deployer .gwp-deployer-tabs .nav-tab-active {
+	border-bottom-color: var(--gwp-accent);
+	color: var(--gwp-accent);
+	background: transparent;
+}
+
+.gwp-deployer .gwp-deployer-panel {
+	margin-top: 20px;
+	padding: 24px 28px 28px;
+	border: 1px solid var(--gwp-border);
+	border-radius: 12px;
+	background: var(--gwp-surface);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.gwp-deployer .gwp-deployer-panel > h2:first-child,
+.gwp-deployer .gwp-deployer-panel > h3:first-child {
+	margin-top: 0;
+}
+
+.gwp-deployer .gwp-deployer-panel h2 {
+	margin: 28px 0 10px;
+	font-size: 18px;
+}
+
+.gwp-deployer .gwp-deployer-panel h2:not(:first-child) {
+	padding-top: 24px;
+	border-top: 1px solid #edf0f2;
+}
+
+.gwp-deployer .form-table {
+	margin: 8px 0 4px;
+}
+
+.gwp-deployer .form-table th {
+	width: 190px;
+	padding: 16px 12px 16px 0;
+}
+
+.gwp-deployer .form-table td {
+	padding: 12px 10px;
+}
+
+.gwp-deployer input[type="text"],
+.gwp-deployer input[type="password"],
+.gwp-deployer input[type="number"],
+.gwp-deployer select {
+	min-height: 38px;
+	border-color: #c7cdd3;
+	border-radius: 6px;
+}
+
+.gwp-deployer input:focus,
+.gwp-deployer select:focus {
+	border-color: var(--gwp-accent);
+	box-shadow: 0 0 0 1px var(--gwp-accent);
+}
+
+.gwp-deployer .button {
+	min-height: 34px;
+	border-radius: 6px;
+}
+
+.gwp-deployer .button-primary {
+	border-color: var(--gwp-accent);
+	background: var(--gwp-accent);
+}
+
+.gwp-deployer .button-primary:hover,
+.gwp-deployer .button-primary:focus {
+	border-color: var(--gwp-accent-dark);
+	background: var(--gwp-accent-dark);
+}
+
+.gwp-deployer .gwp-deployer-actions form {
+	display: inline-block !important;
+	margin: 0 4px 5px 0;
+}
+
+.gwp-deployer .gwp-deployer-actions .button {
+	white-space: nowrap;
+}
+
+.gwp-deployer .gwp-deployer-secret td {
+	background: #fff8e5;
+}
+
+.gwp-deployer .notice.inline {
+	margin: 12px 0;
+	border-radius: 6px;
+}
+
+.gwp-deployer .gwp-deployer-table-wrap {
+	overflow-x: auto;
+	margin-top: 12px;
+	border: 1px solid var(--gwp-border);
+	border-radius: 8px;
+}
+
+.gwp-deployer .gwp-deployer-table {
+	border: 0;
+	box-shadow: none;
+}
+
+.gwp-deployer .gwp-deployer-table th {
+	padding: 12px 10px;
+	background: #f6f7f7;
+	font-weight: 600;
+}
+
+.gwp-deployer .gwp-deployer-table td {
+	padding: 13px 10px;
+	vertical-align: middle;
+}
+
+.gwp-deployer .gwp-deployer-status {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 9px;
+	border-radius: 999px;
+	background: #eef1f4;
+	color: #50575e;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.gwp-deployer .gwp-deployer-status--up_to_date {
+	background: #e7f7ed;
+	color: #0a6b35;
+}
+
+.gwp-deployer .gwp-deployer-status--update_available {
+	background: #fff3cd;
+	color: #7a4b00;
+}
+
+.gwp-deployer .gwp-deployer-status--error {
+	background: #fce8e8;
+	color: #b32d2e;
 }
 
 .gwp-deployer .gwp-deployer-authorize {
@@ -45,11 +232,26 @@
 }
 
 .gwp-deployer-form-status {
-	display: inline-flex;
+	display: flex;
 	align-items: center;
 	gap: 6px;
-	margin-left: 8px;
-	vertical-align: middle;
+	margin-top: 8px;
+	width: max-content;
+	min-height: 24px;
+	padding: 4px 9px;
+	border-radius: 6px;
+	background: #f0f6fc;
+	color: #1d4ed8;
+}
+
+.gwp-deployer .gwp-deployer-action-status:not(:empty) {
+	display: block;
+	margin: 2px 0 8px;
+	clear: both;
+}
+
+.gwp-deployer .gwp-deployer-action-status .gwp-deployer-form-status {
+	margin-top: 0;
 }
 
 .gwp-deployer-form-status .spinner {
@@ -63,4 +265,35 @@
 
 .gwp-deployer form.is-busy {
 	opacity: 0.75;
+}
+
+@media screen and (max-width: 782px) {
+	.gwp-deployer .gwp-deployer-header__mark {
+		display: none;
+	}
+
+	.gwp-deployer .gwp-deployer-tabs {
+		display: flex;
+		overflow-x: auto;
+		padding: 0;
+	}
+
+	.gwp-deployer .gwp-deployer-tabs .nav-tab {
+		flex: 0 0 auto;
+	}
+
+	.gwp-deployer .gwp-deployer-panel {
+		padding: 18px 16px 22px;
+	}
+
+	.gwp-deployer .form-table th,
+	.gwp-deployer .form-table td {
+		display: block;
+		width: auto;
+		padding: 8px 0;
+	}
+
+	.gwp-deployer input.regular-text {
+		width: 100%;
+	}
 }

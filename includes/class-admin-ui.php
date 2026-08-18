@@ -134,6 +134,7 @@ final class AdminUI {
 		}
 
 		wp_enqueue_style( 'gwp_deployer_admin', plugin_dir_url( GWPD_PLUGIN_FILE ) . 'assets/css/admin.css', array(), GWPD_VERSION );
+		wp_enqueue_script( 'gwp_deployer_admin', plugin_dir_url( GWPD_PLUGIN_FILE ) . 'assets/js/admin.js', array(), GWPD_VERSION, true );
 	}
 
 	/**

@@ -43,3 +43,24 @@
 .gwp-deployer .gwp-deployer-steps li {
 	margin-bottom: 4px;
 }
+
+.gwp-deployer-form-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: 8px;
+	vertical-align: middle;
+}
+
+.gwp-deployer-form-status .spinner {
+	float: none;
+	margin: 0;
+}
+
+.gwp-deployer-form-status__error {
+	color: #b32d2e;
+}
+
+.gwp-deployer form.is-busy {
+	opacity: 0.75;
+}

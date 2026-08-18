@@ -332,27 +332,16 @@ final class Installer {
 
 		if ( 'plugin' === $type ) {
 			$upgrader = new \Plugin_Upgrader( $skin );
-
-			if ( $exists && $managed_by_us && '' !== $main_file ) {
-				$result = $upgrader->upgrade( $slug . '/' . $main_file, array( 'package' => $package_zip ) );
-			} else {
-				// Fresh install, or confirmed overwrite of an unmanaged package.
-				if ( $exists ) {
-					$this->remove_dir_recursive( $destination );
-				}
-				$result = $upgrader->install( $package_zip );
-			}
+			$result   = $upgrader->install(
+				$package_zip,
+				array( 'overwrite_package' => $exists )
+			);
 		} else {
 			$upgrader = new \Theme_Upgrader( $skin );
-
-			if ( $exists && $managed_by_us ) {
-				$result = $upgrader->upgrade( $slug, array( 'package' => $package_zip ) );
-			} else {
-				if ( $exists ) {
-					$this->remove_dir_recursive( $destination );
-				}
-				$result = $upgrader->install( $package_zip );
-			}
+			$result   = $upgrader->install(
+				$package_zip,
+				array( 'overwrite_package' => $exists )
+			);
 		}
 
 		if ( is_wp_error( $result ) || $skin->has_errors() || ! is_dir( $destination ) ) {

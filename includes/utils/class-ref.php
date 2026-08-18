@@ -2,10 +2,10 @@
 /**
  * Git ref (branch/tag) validation and matching.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Utils;
+namespace PushWP\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

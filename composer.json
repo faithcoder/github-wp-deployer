@@ -1,5 +1,5 @@
 {
-    "name": "faithcoder/github-wp-deployer",
+    "name": "faithcoder/pushwp",
     "description": "Securely install and update WordPress themes and plugins from GitHub.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
@@ -19,7 +19,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "GitHubWPDeployer\\Utils\\": "includes/utils/"
+            "PushWP\\Utils\\": "includes/utils/"
         }
     }
 }

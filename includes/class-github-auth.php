@@ -2,10 +2,10 @@
 /**
  * GitHub OAuth web application flow.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,10 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class GitHubAuth {
 
-	const STATE_TRANSIENT = 'gwp_deployer_oauth_state';
+	const STATE_TRANSIENT = 'pushwp_oauth_state';
 
-	const ACTION_CONNECT  = 'gwp_deployer_connect';
-	const ACTION_CALLBACK = 'gwp_deployer_oauth_callback';
+	const ACTION_CONNECT  = 'pushwp_connect';
+	const ACTION_CALLBACK = 'pushwp_oauth_callback';
 
 	/**
 	 * Settings store.
@@ -55,8 +55,8 @@ final class GitHubAuth {
 	 * @return string
 	 */
 	public function client_id() {
-		if ( defined( 'GWPD_GITHUB_CLIENT_ID' ) && '' !== (string) GWPD_GITHUB_CLIENT_ID ) {
-			return (string) GWPD_GITHUB_CLIENT_ID;
+		if ( defined( 'PUSHWP_GITHUB_CLIENT_ID' ) && '' !== (string) PUSHWP_GITHUB_CLIENT_ID ) {
+			return (string) PUSHWP_GITHUB_CLIENT_ID;
 		}
 
 		return $this->settings->get_client_id();
@@ -68,8 +68,8 @@ final class GitHubAuth {
 	 * @return string
 	 */
 	public function client_secret() {
-		if ( defined( 'GWPD_GITHUB_CLIENT_SECRET' ) && '' !== (string) GWPD_GITHUB_CLIENT_SECRET ) {
-			return (string) GWPD_GITHUB_CLIENT_SECRET;
+		if ( defined( 'PUSHWP_GITHUB_CLIENT_SECRET' ) && '' !== (string) PUSHWP_GITHUB_CLIENT_SECRET ) {
+			return (string) PUSHWP_GITHUB_CLIENT_SECRET;
 		}
 
 		return $this->settings->get_client_secret();
@@ -81,8 +81,8 @@ final class GitHubAuth {
 	 * @return bool
 	 */
 	public function uses_constants() {
-		return ( defined( 'GWPD_GITHUB_CLIENT_ID' ) && '' !== (string) GWPD_GITHUB_CLIENT_ID )
-			|| ( defined( 'GWPD_GITHUB_CLIENT_SECRET' ) && '' !== (string) GWPD_GITHUB_CLIENT_SECRET );
+		return ( defined( 'PUSHWP_GITHUB_CLIENT_ID' ) && '' !== (string) PUSHWP_GITHUB_CLIENT_ID )
+			|| ( defined( 'PUSHWP_GITHUB_CLIENT_SECRET' ) && '' !== (string) PUSHWP_GITHUB_CLIENT_SECRET );
 	}
 
 	/**
@@ -109,7 +109,7 @@ final class GitHubAuth {
 	 * @return string
 	 */
 	public function scopes() {
-		return apply_filters( 'gwp_deployer_oauth_scopes', 'repo' );
+		return apply_filters( 'pushwp_oauth_scopes', 'repo' );
 	}
 
 	/**
@@ -120,7 +120,7 @@ final class GitHubAuth {
 	public function connect_url() {
 		$state = wp_generate_password( 48, false, false );
 
-		set_transient( self::STATE_TRANSIENT, $state, 10 * MINUTE_IN_SECONDS );
+		set_transient( $this->state_transient_key(), $state, 10 * MINUTE_IN_SECONDS );
 
 		$args = array(
 			'client_id'    => $this->client_id(),
@@ -140,10 +140,10 @@ final class GitHubAuth {
 	 */
 	public function handle_connect() {
 		if ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'install_themes' ) ) {
-			wp_die( esc_html__( 'You do not have permission to connect GitHub.', 'github-wp-deployer' ) );
+			wp_die( esc_html__( 'You do not have permission to connect GitHub.', 'pushwp' ) );
 		}
 
-		check_admin_referer( 'gwp_deployer_connect' );
+		check_admin_referer( 'pushwp_connect' );
 
 		if ( ! $this->is_configured() ) {
 			wp_safe_redirect( $this->settings_page_url( 'missing_config' ) );
@@ -163,15 +163,16 @@ final class GitHubAuth {
 	 */
 	public function handle_callback() {
 		if ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'install_themes' ) ) {
-			wp_die( esc_html__( 'You do not have permission to connect GitHub.', 'github-wp-deployer' ) );
+			wp_die( esc_html__( 'You do not have permission to connect GitHub.', 'pushwp' ) );
 		}
 
 		// OAuth callback parameters; no admin nonce applies here.
 		$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$code  = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$expected_state = get_transient( self::STATE_TRANSIENT );
-		delete_transient( self::STATE_TRANSIENT );
+		$state_key      = $this->state_transient_key();
+		$expected_state = get_transient( $state_key );
+		delete_transient( $state_key );
 
 		if ( '' === $state || ! is_string( $expected_state ) || ! hash_equals( $expected_state, $state ) ) {
 			wp_safe_redirect( $this->settings_page_url( 'oauth_state_failed' ) );
@@ -215,7 +216,7 @@ final class GitHubAuth {
 				'timeout' => 20,
 				'headers' => array(
 					'Accept'     => 'application/json',
-					'User-Agent' => 'github-wp-deployer/' . GWPD_VERSION,
+					'User-Agent' => 'pushwp/' . PUSHWP_VERSION,
 				),
 				'body'    => array(
 					'client_id'     => $this->client_id(),
@@ -233,7 +234,7 @@ final class GitHubAuth {
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( ! is_array( $data ) || empty( $data['access_token'] ) ) {
-			return new \WP_Error( 'oauth_exchange_failed', __( 'Could not exchange the GitHub authorization code for an access token.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'oauth_exchange_failed', __( 'Could not exchange the GitHub authorization code for an access token.', 'pushwp' ) );
 		}
 
 		return (string) $data['access_token'];
@@ -250,16 +251,25 @@ final class GitHubAuth {
 	}
 
 	/**
+	 * OAuth state transient key scoped to the current administrator.
+	 *
+	 * @return string
+	 */
+	private function state_transient_key() {
+		return self::STATE_TRANSIENT . '_' . get_current_user_id();
+	}
+
+	/**
 	 * The plugin settings page URL.
 	 *
 	 * @param string $notice Optional notice key.
 	 * @return string
 	 */
 	private function settings_page_url( $notice = '' ) {
-		$url = add_query_arg( 'tab', 'connection', admin_url( 'admin.php?page=' . GWPD_SLUG ) );
+		$url = add_query_arg( 'tab', 'connection', admin_url( 'admin.php?page=' . PUSHWP_SLUG ) );
 
 		if ( '' !== $notice ) {
-			$url = add_query_arg( 'gwp_deployer_notice', rawurlencode( $notice ), $url );
+			$url = add_query_arg( 'pushwp_notice', rawurlencode( $notice ), $url );
 		}
 
 		return $url;

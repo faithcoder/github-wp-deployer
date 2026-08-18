@@ -2,12 +2,12 @@
 /**
  * Webhook signature verification tests.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Tests;
+namespace PushWP\Tests;
 
-use GitHubWPDeployer\Utils\WebhookSignature;
+use PushWP\Utils\WebhookSignature;
 use PHPUnit\Framework\TestCase;
 
 final class SignatureTest extends TestCase {

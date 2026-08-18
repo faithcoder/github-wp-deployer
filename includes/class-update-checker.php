@@ -2,10 +2,10 @@
 /**
  * Scheduled update detection and background deployment.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,8 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class UpdateChecker {
 
-	const CRON_CHECK  = 'gwp_deployer_check_updates';
-	const CRON_DEPLOY = 'gwp_deployer_deploy';
+	const CRON_CHECK  = 'pushwp_check_updates';
+	const CRON_DEPLOY = 'pushwp_deploy';
 
 	/**
 	 * Settings store.
@@ -113,12 +113,13 @@ final class UpdateChecker {
 	 * Check a single repository for an update.
 	 *
 	 * @param array $repo Repository record.
-	 * @return array{has_update:bool,remote_sha:string}
+	 * @return array{has_update:bool,remote_sha:string,error:string}
 	 */
 	public function check_update( array $repo ) {
 		$result = array(
 			'has_update' => false,
 			'remote_sha' => '',
+			'error'      => '',
 		);
 
 		$owner = isset( $repo['owner'] ) ? $repo['owner'] : '';
@@ -137,6 +138,7 @@ final class UpdateChecker {
 			$release = $this->github->get_latest_release( $owner, $name, ! empty( $repo['include_prerelease'] ) );
 
 			if ( is_wp_error( $release ) ) {
+				$result['error'] = $release->get_error_message();
 				$this->repos->update(
 					$repo['id'],
 					array(
@@ -149,6 +151,7 @@ final class UpdateChecker {
 			}
 
 			if ( empty( $release['tag_name'] ) ) {
+				$result['error'] = __( 'GitHub did not return a valid release tag.', 'pushwp' );
 				$this->repos->update(
 					$repo['id'],
 					array(
@@ -166,6 +169,7 @@ final class UpdateChecker {
 		$sha = $this->github->resolve_ref( $owner, $name, $ref );
 
 		if ( is_wp_error( $sha ) ) {
+			$result['error'] = $sha->get_error_message();
 			$this->repos->update(
 				$repo['id'],
 				array(

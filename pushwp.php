@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       GitHub Theme & Plugin Deployer
- * Plugin URI:        https://github.com/faithcoder/github-wp-deployer
+ * Plugin Name:       PushWP
+ * Plugin URI:        https://github.com/faithcoder/pushwp
  * Description:       Securely install and update WordPress themes and plugins from GitHub, without FTP or SSH.
  * Version:           1.0.0
  * Requires at least: 6.5
@@ -9,25 +9,25 @@
  * Author:            faithcoder
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       github-wp-deployer
+ * Text Domain:       pushwp
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GWPD_VERSION', '1.0.0' );
-define( 'GWPD_PLUGIN_FILE', __FILE__ );
-define( 'GWPD_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'GWPD_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
-define( 'GWPD_SLUG', 'github-wp-deployer' );
-define( 'GWPD_TEXT_DOMAIN', 'github-wp-deployer' );
+define( 'PUSHWP_VERSION', '1.0.0' );
+define( 'PUSHWP_PLUGIN_FILE', __FILE__ );
+define( 'PUSHWP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'PUSHWP_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+define( 'PUSHWP_SLUG', 'pushwp' );
+define( 'PUSHWP_TEXT_DOMAIN', 'pushwp' );
 
 spl_autoload_register(
 	function ( $class_name ) {
-		$prefix = 'GitHubWPDeployer\\';
+		$prefix = 'PushWP\\';
 
 		if ( 0 !== strpos( $class_name, $prefix ) ) {
 			return;
@@ -60,7 +60,7 @@ spl_autoload_register(
 			return;
 		}
 
-		$path = GWPD_PLUGIN_DIR . 'includes/' . $map[ $relative ];
+		$path = PUSHWP_PLUGIN_DIR . 'includes/' . $map[ $relative ];
 
 		if ( is_readable( $path ) ) {
 			require_once $path;
@@ -68,9 +68,9 @@ spl_autoload_register(
 	}
 );
 
-require_once GWPD_PLUGIN_DIR . 'includes/class-plugin.php';
+require_once PUSHWP_PLUGIN_DIR . 'includes/class-plugin.php';
 
-register_activation_hook( __FILE__, array( 'GitHubWPDeployer\\Plugin', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'GitHubWPDeployer\\Plugin', 'deactivate' ) );
+register_activation_hook( __FILE__, array( 'PushWP\\Plugin', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'PushWP\\Plugin', 'deactivate' ) );
 
-add_action( 'plugins_loaded', array( 'GitHubWPDeployer\\Plugin', 'instance' ) );
+add_action( 'plugins_loaded', array( 'PushWP\\Plugin', 'instance' ) );

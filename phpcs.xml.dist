@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="GitHub WP Deployer">
-    <description>WordPress Coding Standards for GitHub WP Deployer.</description>
+<ruleset name="PushWP">
+    <description>WordPress Coding Standards for PushWP.</description>
 
     <arg name="extensions" value="php"/>
     <arg name="colors"/>
@@ -18,7 +18,7 @@
     <rule ref="WordPress.WP.I18n">
         <properties>
             <property name="text_domain" type="array">
-                <element value="github-wp-deployer"/>
+                <element value="pushwp"/>
             </property>
         </properties>
     </rule>

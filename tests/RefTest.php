@@ -2,12 +2,12 @@
 /**
  * Ref validation and branch matching tests.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Tests;
+namespace PushWP\Tests;
 
-use GitHubWPDeployer\Utils\Ref;
+use PushWP\Utils\Ref;
 use PHPUnit\Framework\TestCase;
 
 final class RefTest extends TestCase {

@@ -2,10 +2,10 @@
 /**
  * Replay protection for webhook delivery IDs.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Utils;
+namespace PushWP\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

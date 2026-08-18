@@ -1,11 +1,11 @@
-# GitHub Theme & Plugin Deployer
+# PushWP
 
 Securely install and update WordPress themes and plugins from GitHub, without
 FTP or SSH.
 
 - **Requires:** WordPress 6.5+, PHP 8.0+
-- **Text domain:** `github-wp-deployer`
-- **Main file:** `github-wp-deployer.php`
+- **Text domain:** `pushwp`
+- **Main file:** `pushwp.php`
 
 ## Overview
 
@@ -37,34 +37,36 @@ Local development → feature branch → pull request → merge into main
 | `UpdateChecker` | Twice-daily cron + background deploy action |
 | `Webhook` | REST endpoint with HMAC + replay protection |
 | `Logger` | Capped, sanitized audit log |
-| `AdminUI` | Tools → GitHub Deployer screen |
+| `AdminUI` | Tools → PushWP screen |
 
 ## Installation
 
-1. Copy `github-wp-deployer` to `/wp-content/plugins/` and activate.
+1. Copy `pushwp` to `/wp-content/plugins/` and activate.
 2. Create a GitHub OAuth App (see below) and add the credentials to
    `wp-config.php`.
-3. Open **Tools → GitHub Deployer**.
+3. Open **Tools → PushWP**.
 
 ## GitHub OAuth App setup
 
 1. GitHub → Settings → Developer settings → OAuth Apps → New OAuth App.
 2. Set **Authorization callback URL** to your site's
-   `https://example.com/wp-admin/admin-post.php?action=gwp_deployer_oauth_callback` (the exact URL is shown on the
+   `https://example.com/wp-admin/admin-post.php?action=pushwp_oauth_callback` (the exact URL is shown on the
    plugin settings screen).
 3. Enter the credentials in one of two ways:
 
-   * On **Tools → GitHub Deployer → GitHub OAuth App** (stored in the
+   * On **Tools → PushWP → GitHub OAuth App** (stored in the
      database; the client secret is encrypted and never displayed), or
    * In `wp-config.php`, which takes precedence over the settings screen:
 
 ```php
-define( 'GWPD_GITHUB_CLIENT_ID', '...' );
-define( 'GWPD_GITHUB_CLIENT_SECRET', '...' );
+define( 'PUSHWP_GITHUB_CLIENT_ID', '...' );
+define( 'PUSHWP_GITHUB_CLIENT_SECRET', '...' );
 ```
 
-The client secret is only ever used server-side during the token exchange and
-is never stored, logged, or rendered.
+The client secret is used server-side during the token exchange and is never
+logged or rendered. Database credentials are encrypted when sodium and the
+WordPress authentication salts are available; otherwise the dashboard warns
+the administrator to prefer `wp-config.php` constants.
 
 ## Webhook setup
 
@@ -80,14 +82,26 @@ deduplicates delivery IDs, and deploys in the background.
 
 | Filter | Default | Purpose |
 |---|---|---|
-| `gwp_deployer_api_timeout` | `20` | GitHub API request timeout (seconds) |
-| `gwp_deployer_download_timeout` | `300` | Archive download timeout (seconds) |
-| `gwp_deployer_max_archive_bytes` | `50 * MB_IN_BYTES` | Maximum archive size |
-| `gwp_deployer_oauth_scopes` | `repo` | OAuth scopes requested |
+| `pushwp_api_timeout` | `20` | GitHub API request timeout (seconds) |
+| `pushwp_download_timeout` | `300` | Archive download timeout (seconds) |
+| `pushwp_max_archive_bytes` | `50 * MB_IN_BYTES` | Maximum archive size |
+| `pushwp_oauth_scopes` | `repo` | OAuth scopes requested |
+
+## External service disclosure
+
+The plugin connects directly to GitHub for OAuth, account information,
+repository metadata, commits, releases, and source archives. OAuth exchanges
+send the configured client credentials, authorization code, callback URL, and
+scope. Authenticated API requests send the access token and configured
+repository identifiers/references. No data passes through a service operated
+by the plugin author.
+
+- [GitHub Terms of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service)
+- [GitHub General Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)
 
 ## Actions
 
-- `gwp_deployer_deployed` — after a successful deployment (`$type`, `$slug`,
+- `pushwp_deployed` — after a successful deployment (`$type`, `$slug`,
   `$version`, `$sha`).
 
 ## Security model (threat-model notes)
@@ -133,7 +147,7 @@ deduplicates delivery IDs, and deploys in the background.
 ## Manual end-to-end testing checklist
 
 1. Activate the plugin with no warnings or fatal errors.
-2. Define `GWPD_GITHUB_CLIENT_ID`/`GWPD_GITHUB_CLIENT_SECRET`, click **Connect
+2. Define `PUSHWP_GITHUB_CLIENT_ID`/`PUSHWP_GITHUB_CLIENT_SECRET`, click **Connect
    GitHub**, and confirm the account appears.
 3. Validate a public plugin repository (e.g. `WordPress/two-factor`) and confirm
    the detected name/version/type/sha are shown.
@@ -165,7 +179,7 @@ dependency-light and does not require a running WordPress installation.
 
 ## Packaging
 
-The distributable ZIP must contain a single top-level `github-wp-deployer`
+The distributable ZIP must contain a single top-level `pushwp`
 directory and exclude development-only files (`vendor/`, `composer.json`,
 `composer.lock`, `tests/`, `phpcs.xml.dist`, `.git*`).
 

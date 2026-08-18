@@ -2,12 +2,12 @@
 /**
  * Replay protection tests.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Tests;
+namespace PushWP\Tests;
 
-use GitHubWPDeployer\Utils\ReplayGuard;
+use PushWP\Utils\ReplayGuard;
 use PHPUnit\Framework\TestCase;
 
 final class ReplayTest extends TestCase {

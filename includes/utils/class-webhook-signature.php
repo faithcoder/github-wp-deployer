@@ -2,10 +2,10 @@
 /**
  * Webhook signature verification and replay protection.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Utils;
+namespace PushWP\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

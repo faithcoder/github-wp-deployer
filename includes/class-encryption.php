@@ -2,10 +2,10 @@
 /**
  * Token encryption using Sodium secretbox keyed from WordPress salts.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

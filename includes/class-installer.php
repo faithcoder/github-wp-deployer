@@ -2,12 +2,12 @@
 /**
  * Installation and update orchestration.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
-use GitHubWPDeployer\Utils\Slug;
+use PushWP\Utils\Slug;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Installer {
 
-	const LOCK_TRANSIENT = 'gwp_deployer_lock';
+	const LOCK_TRANSIENT = 'pushwp_lock';
 	const LOCK_TTL       = 15 * MINUTE_IN_SECONDS;
 
 	/**
@@ -135,7 +135,7 @@ final class Installer {
 		$this->cleanup = array();
 
 		if ( $this->is_locked() ) {
-			return new \WP_Error( 'deploy_locked', __( 'Another deployment is already in progress. Please wait and try again.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'deploy_locked', __( 'Another deployment is already in progress. Please wait and try again.', 'pushwp' ) );
 		}
 
 		$this->lock();
@@ -214,16 +214,16 @@ final class Installer {
 			$slug = Slug::from_name( $detected['name'] );
 
 			if ( '' === $slug ) {
-				return new \WP_Error( 'slug_derive_failed', __( 'Could not derive a destination slug from the package name.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'slug_derive_failed', __( 'Could not derive a destination slug from the package name.', 'pushwp' ) );
 			}
 		}
 
 		if ( ! Slug::validate( $slug ) ) {
-			return new \WP_Error( 'invalid_slug', __( 'The destination slug is invalid.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'invalid_slug', __( 'The destination slug is invalid.', 'pushwp' ) );
 		}
 
-		if ( GWPD_SLUG === $slug ) {
-			return new \WP_Error( 'self_replace', __( 'This plugin cannot replace itself in version 1.', 'github-wp-deployer' ) );
+		if ( PUSHWP_SLUG === $slug ) {
+			return new \WP_Error( 'self_replace', __( 'This plugin cannot replace itself in version 1.', 'pushwp' ) );
 		}
 
 		$main_file = isset( $repo['main_file'] ) && '' !== $repo['main_file'] ? $repo['main_file'] : $detected['main_file'];
@@ -258,7 +258,7 @@ final class Installer {
 
 		// Warn when the commit changed but the package version did not increase.
 		if ( '' !== $previous_version && '' !== $version && version_compare( $version, $previous_version, '<=' ) && isset( $repo['deployed_sha'] ) && ! hash_equals( (string) $repo['deployed_sha'], (string) $sha ) ) {
-			$this->log( $repo, $sha, 'version-warning', 'failure', $user_id, sprintf( /* translators: 1: previous version, 2: new version. */ __( 'Remote commit changed but the package version stayed at %1$s (was %2$s).', 'github-wp-deployer' ), $version, $previous_version ) );
+			$this->log( $repo, $sha, 'version-warning', 'failure', $user_id, sprintf( /* translators: 1: previous version, 2: new version. */ __( 'Remote commit changed but the package version stayed at %1$s (was %2$s).', 'pushwp' ), $version, $previous_version ) );
 		}
 
 		$this->log( $repo, $sha, 'deploy', 'success', $user_id, $detected['name'] );
@@ -271,7 +271,7 @@ final class Installer {
 		 * @param string $version Deployed version.
 		 * @param string $sha     Deployed commit SHA.
 		 */
-		do_action( 'gwp_deployer_deployed', $type, $slug, $version, $sha );
+		do_action( 'pushwp_deployed', $type, $slug, $version, $sha );
 
 		return true;
 	}
@@ -299,11 +299,11 @@ final class Installer {
 
 		if ( $exists && ! $managed_by_us ) {
 			if ( $managed ) {
-				return new \WP_Error( 'managed_elsewhere', __( 'This destination is managed by a different repository entry and cannot be overwritten.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'managed_elsewhere', __( 'This destination is managed by a different repository entry and cannot be overwritten.', 'pushwp' ) );
 			}
 
 			if ( ! $force_overwrite ) {
-				return new \WP_Error( 'destination_exists', __( 'This destination already exists and is not managed by this plugin. Enable overwrite to replace it.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'destination_exists', __( 'This destination already exists and is not managed by this plugin. Enable overwrite to replace it.', 'pushwp' ) );
 			}
 		}
 
@@ -323,7 +323,7 @@ final class Installer {
 			$result = $this->copy_dir_recursive( $destination, $backup );
 
 			if ( is_wp_error( $result ) ) {
-				return new \WP_Error( 'backup_failed', __( 'Could not create a rollback copy of the existing package.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'backup_failed', __( 'Could not create a rollback copy of the existing package.', 'pushwp' ) );
 			}
 		}
 
@@ -347,7 +347,7 @@ final class Installer {
 		if ( is_wp_error( $result ) || $skin->has_errors() || ! is_dir( $destination ) ) {
 			$this->rollback( $destination, $backup, $exists );
 
-			$message = $skin->has_errors() ? implode( ' ', $skin->errors ) : __( 'The package could not be installed.', 'github-wp-deployer' );
+			$message = $skin->has_errors() ? implode( ' ', $skin->errors ) : __( 'The package could not be installed.', 'pushwp' );
 
 			return new \WP_Error( 'install_failed', $message );
 		}
@@ -428,7 +428,7 @@ final class Installer {
 			$zip = new \ZipArchive();
 
 			if ( true !== $zip->open( $dest, \ZipArchive::CREATE | \ZipArchive::OVERWRITE ) ) {
-				return new \WP_Error( 'zip_create_failed', __( 'Could not create the package archive.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'zip_create_failed', __( 'Could not create the package archive.', 'pushwp' ) );
 			}
 
 			$base     = untrailingslashit( $source );
@@ -468,7 +468,7 @@ final class Installer {
 		);
 
 		if ( 0 === $result ) {
-			return new \WP_Error( 'zip_create_failed', __( 'Could not create the package archive.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'zip_create_failed', __( 'Could not create the package archive.', 'pushwp' ) );
 		}
 
 		return true;
@@ -582,7 +582,7 @@ final class Installer {
 	 * @return string
 	 */
 	private function temp_file( $suffix ) {
-		$file = tempnam( sys_get_temp_dir(), 'gwp_deployer_' . $suffix . '_' );
+		$file = tempnam( sys_get_temp_dir(), 'pushwp_' . $suffix . '_' );
 
 		if ( false !== $file ) {
 			$this->cleanup[] = $file;
@@ -598,7 +598,7 @@ final class Installer {
 	 * @return string
 	 */
 	private function temp_dir( $suffix = 'extract' ) {
-		$dir = sys_get_temp_dir() . '/gwp_deployer_' . $suffix . '_' . wp_generate_password( 12, false, false );
+		$dir = sys_get_temp_dir() . '/pushwp_' . $suffix . '_' . wp_generate_password( 12, false, false );
 
 		wp_mkdir_p( $dir );
 

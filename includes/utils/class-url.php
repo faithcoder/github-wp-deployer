@@ -2,10 +2,10 @@
 /**
  * GitHub repository URL parsing and validation.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Utils;
+namespace PushWP\Utils;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

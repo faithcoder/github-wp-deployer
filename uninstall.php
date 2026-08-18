@@ -2,7 +2,7 @@
 /**
  * Uninstall handler.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
@@ -10,30 +10,30 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 // Only delete data when the administrator explicitly enabled it.
-if ( '1' === get_option( 'gwp_deployer_delete_on_uninstall', '' ) ) {
+if ( '1' === get_option( 'pushwp_delete_on_uninstall', '' ) ) {
 	// Remove scheduled events.
-	wp_clear_scheduled_hook( 'gwp_deployer_check_updates' );
-	wp_clear_scheduled_hook( 'gwp_deployer_deploy' );
+	wp_clear_scheduled_hook( 'pushwp_check_updates' );
+	wp_clear_scheduled_hook( 'pushwp_deploy' );
 
 	// Remove options.
-	$options = array(
-		'gwp_deployer_token',
-		'gwp_deployer_username',
-		'gwp_deployer_repos',
-		'gwp_deployer_logs',
-		'gwp_deployer_delete_on_uninstall',
-		'gwp_deployer_log_limit',
-		'gwp_deployer_webhook_deliveries',
-		'gwp_deployer_client_id',
-		'gwp_deployer_client_secret',
+	$pushwp_options = array(
+		'pushwp_token',
+		'pushwp_username',
+		'pushwp_repos',
+		'pushwp_logs',
+		'pushwp_delete_on_uninstall',
+		'pushwp_log_limit',
+		'pushwp_webhook_deliveries',
+		'pushwp_client_id',
+		'pushwp_client_secret',
 	);
 
-	foreach ( $options as $option ) {
-		delete_option( $option );
+	foreach ( $pushwp_options as $pushwp_option ) {
+		delete_option( $pushwp_option );
 	}
 
 	// Remove transient state.
-	delete_transient( 'gwp_deployer_oauth_state' );
-	delete_transient( 'gwp_deployer_lock' );
-	delete_transient( 'gwp_deployer_last_validation' );
+	delete_transient( 'pushwp_oauth_state' );
+	delete_transient( 'pushwp_lock' );
+	delete_transient( 'pushwp_last_validation' );
 }

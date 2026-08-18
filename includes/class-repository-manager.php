@@ -2,12 +2,12 @@
 /**
  * Managed repository registry.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
-use GitHubWPDeployer\Utils\WebhookSignature;
+use PushWP\Utils\WebhookSignature;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

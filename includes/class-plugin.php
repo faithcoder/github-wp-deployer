@@ -2,10 +2,10 @@
 /**
  * Plugin bootstrap.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -50,7 +50,7 @@ final class Plugin {
 	 * @return void
 	 */
 	public static function activate() {
-		require_once GWPD_PLUGIN_DIR . 'includes/class-update-checker.php';
+		require_once PUSHWP_PLUGIN_DIR . 'includes/class-update-checker.php';
 		UpdateChecker::schedule();
 	}
 
@@ -61,6 +61,7 @@ final class Plugin {
 	 */
 	public static function deactivate() {
 		UpdateChecker::unschedule();
+		wp_clear_scheduled_hook( UpdateChecker::CRON_DEPLOY );
 	}
 
 	/**
@@ -69,8 +70,6 @@ final class Plugin {
 	 * @return void
 	 */
 	private function boot() {
-		load_plugin_textdomain( GWPD_TEXT_DOMAIN, false, dirname( GWPD_PLUGIN_BASENAME ) . '/languages' );
-
 		$this->services['settings']  = new Settings();
 		$this->services['logger']    = new Logger( $this->services['settings'] );
 		$this->services['github']    = new GitHubClient( $this->services['settings'] );

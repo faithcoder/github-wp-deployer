@@ -2,12 +2,12 @@
 /**
  * URL parsing tests.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Tests;
+namespace PushWP\Tests;
 
-use GitHubWPDeployer\Utils\Url;
+use PushWP\Utils\Url;
 use PHPUnit\Framework\TestCase;
 
 final class UrlTest extends TestCase {

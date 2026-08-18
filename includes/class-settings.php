@@ -2,10 +2,10 @@
 /**
  * Settings persistence via the WordPress Options API.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,15 +16,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Settings {
 
-	const OPTION_TOKEN               = 'gwp_deployer_token';
-	const OPTION_USERNAME            = 'gwp_deployer_username';
-	const OPTION_REPOS               = 'gwp_deployer_repos';
-	const OPTION_LOGS                = 'gwp_deployer_logs';
-	const OPTION_DELETE_ON_UNINSTALL = 'gwp_deployer_delete_on_uninstall';
-	const OPTION_LOG_LIMIT           = 'gwp_deployer_log_limit';
-	const OPTION_DELIVERIES          = 'gwp_deployer_webhook_deliveries';
-	const OPTION_CLIENT_ID           = 'gwp_deployer_client_id';
-	const OPTION_CLIENT_SECRET       = 'gwp_deployer_client_secret';
+	const OPTION_TOKEN               = 'pushwp_token';
+	const OPTION_USERNAME            = 'pushwp_username';
+	const OPTION_REPOS               = 'pushwp_repos';
+	const OPTION_LOGS                = 'pushwp_logs';
+	const OPTION_DELETE_ON_UNINSTALL = 'pushwp_delete_on_uninstall';
+	const OPTION_LOG_LIMIT           = 'pushwp_log_limit';
+	const OPTION_DELIVERIES          = 'pushwp_webhook_deliveries';
+	const OPTION_CLIENT_ID           = 'pushwp_client_id';
+	const OPTION_CLIENT_SECRET       = 'pushwp_client_secret';
 
 	const DEFAULT_LOG_LIMIT = 100;
 

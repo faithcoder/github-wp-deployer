@@ -2,12 +2,12 @@
 /**
  * Package inspector tests.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Tests;
+namespace PushWP\Tests;
 
-use GitHubWPDeployer\PackageInspector;
+use PushWP\PackageInspector;
 use PHPUnit\Framework\TestCase;
 
 final class InspectorTest extends TestCase {
@@ -28,7 +28,7 @@ final class InspectorTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->inspector = new PackageInspector();
-		$this->tmp       = sys_get_temp_dir() . '/gwp_test_' . bin2hex( random_bytes( 6 ) );
+		$this->tmp       = sys_get_temp_dir() . '/pushwp_test_' . bin2hex( random_bytes( 6 ) );
 		mkdir( $this->tmp, 0755, true );
 	}
 

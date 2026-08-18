@@ -2,10 +2,10 @@
 /**
  * GitHub API client built on the WordPress HTTP API.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -40,7 +40,7 @@ final class GitHubClient {
 	 * @return int
 	 */
 	public function api_timeout() {
-		return (int) apply_filters( 'gwp_deployer_api_timeout', 20 );
+		return (int) apply_filters( 'pushwp_api_timeout', 20 );
 	}
 
 	/**
@@ -49,7 +49,7 @@ final class GitHubClient {
 	 * @return int
 	 */
 	public function download_timeout() {
-		return (int) apply_filters( 'gwp_deployer_download_timeout', 300 );
+		return (int) apply_filters( 'pushwp_download_timeout', 300 );
 	}
 
 	/**
@@ -58,7 +58,7 @@ final class GitHubClient {
 	 * @return int
 	 */
 	public function max_archive_bytes() {
-		return (int) apply_filters( 'gwp_deployer_max_archive_bytes', 50 * MB_IN_BYTES );
+		return (int) apply_filters( 'pushwp_max_archive_bytes', 50 * MB_IN_BYTES );
 	}
 
 	/**
@@ -75,7 +75,7 @@ final class GitHubClient {
 		$headers = array(
 			'Accept'               => 'application/vnd.github+json',
 			'X-GitHub-Api-Version' => '2022-11-28',
-			'User-Agent'           => 'github-wp-deployer/' . GWPD_VERSION,
+			'User-Agent'           => 'pushwp/' . PUSHWP_VERSION,
 		);
 
 		$token = $this->settings->get_token();
@@ -118,7 +118,7 @@ final class GitHubClient {
 		}
 
 		if ( ! is_array( $data ) && ! is_object( $data ) ) {
-			return new \WP_Error( 'github_invalid_response', __( 'GitHub returned an unexpected response.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'github_invalid_response', __( 'GitHub returned an unexpected response.', 'pushwp' ) );
 		}
 
 		return (array) $data;
@@ -140,16 +140,16 @@ final class GitHubClient {
 
 		switch ( $code ) {
 			case 401:
-				return new \WP_Error( 'github_auth', __( 'GitHub authentication failed. The token may be expired or revoked. Please reconnect GitHub.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'github_auth', __( 'GitHub authentication failed. The token may be expired or revoked. Please reconnect GitHub.', 'pushwp' ) );
 			case 403:
 				if ( false !== stripos( $message, 'rate limit' ) || false !== stripos( $message, 'secondary rate limit' ) ) {
-					return new \WP_Error( 'github_rate_limit', __( 'GitHub API rate limit reached. Please wait and try again later.', 'github-wp-deployer' ) );
+					return new \WP_Error( 'github_rate_limit', __( 'GitHub API rate limit reached. Please wait and try again later.', 'pushwp' ) );
 				}
-				return new \WP_Error( 'github_forbidden', __( 'GitHub access denied. This repository may be private or the token lacks the required scope.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'github_forbidden', __( 'GitHub access denied. This repository may be private or the token lacks the required scope.', 'pushwp' ) );
 			case 404:
-				return new \WP_Error( 'github_not_found', __( 'GitHub repository or reference was not found. Check the URL and branch/tag.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'github_not_found', __( 'GitHub repository or reference was not found. Check the URL and branch/tag.', 'pushwp' ) );
 			default:
-				return new \WP_Error( 'github_http_' . $code, sprintf( /* translators: %d: HTTP status code. */ __( 'GitHub request failed with status %d.', 'github-wp-deployer' ), $code ) );
+				return new \WP_Error( 'github_http_' . $code, sprintf( /* translators: %d: HTTP status code. */ __( 'GitHub request failed with status %d.', 'pushwp' ), $code ) );
 		}
 	}
 
@@ -180,7 +180,7 @@ final class GitHubClient {
 		}
 
 		if ( ! isset( $result['sha'] ) || ! is_string( $result['sha'] ) ) {
-			return new \WP_Error( 'github_invalid_commit', __( 'Could not resolve the commit SHA for the requested branch or tag.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'github_invalid_commit', __( 'Could not resolve the commit SHA for the requested branch or tag.', 'pushwp' ) );
 		}
 
 		return $result['sha'];
@@ -210,7 +210,7 @@ final class GitHubClient {
 				}
 			}
 
-			return new \WP_Error( 'github_no_release', __( 'No stable GitHub release found for this repository.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'github_no_release', __( 'No stable GitHub release found for this repository.', 'pushwp' ) );
 		}
 
 		return $result;
@@ -238,7 +238,7 @@ final class GitHubClient {
 
 		$headers = array(
 			'Accept'     => 'application/vnd.github+json',
-			'User-Agent' => 'github-wp-deployer/' . GWPD_VERSION,
+			'User-Agent' => 'pushwp/' . PUSHWP_VERSION,
 		);
 
 		$token = $this->settings->get_token();
@@ -261,7 +261,7 @@ final class GitHubClient {
 		if ( ! is_wp_error( $head ) ) {
 			$content_length = wp_remote_retrieve_header( $head, 'content-length' );
 			if ( $content_length && (int) $content_length > $limit ) {
-				return new \WP_Error( 'archive_too_large', __( 'The repository archive exceeds the maximum allowed size.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'archive_too_large', __( 'The repository archive exceeds the maximum allowed size.', 'pushwp' ) );
 			}
 		}
 
@@ -292,13 +292,13 @@ final class GitHubClient {
 		}
 
 		if ( ! file_exists( $dest_file ) ) {
-			return new \WP_Error( 'archive_download_failed', __( 'The archive download did not produce a file.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'archive_download_failed', __( 'The archive download did not produce a file.', 'pushwp' ) );
 		}
 
 		if ( filesize( $dest_file ) > $limit ) {
 			wp_delete_file( $dest_file );
 
-			return new \WP_Error( 'archive_too_large', __( 'The repository archive exceeds the maximum allowed size.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'archive_too_large', __( 'The repository archive exceeds the maximum allowed size.', 'pushwp' ) );
 		}
 
 		return true;

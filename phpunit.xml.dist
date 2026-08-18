@@ -7,7 +7,7 @@
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true">
     <testsuites>
-        <testsuite name="github-wp-deployer">
+        <testsuite name="pushwp">
             <directory>tests</directory>
         </testsuite>
     </testsuites>

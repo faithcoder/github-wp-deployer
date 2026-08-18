@@ -2,14 +2,14 @@
 /**
  * GitHub push webhook endpoint.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
-use GitHubWPDeployer\Utils\Ref;
-use GitHubWPDeployer\Utils\ReplayGuard;
-use GitHubWPDeployer\Utils\WebhookSignature;
+use PushWP\Utils\Ref;
+use PushWP\Utils\ReplayGuard;
+use PushWP\Utils\WebhookSignature;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Webhook {
 
-	const ROUTE_NAMESPACE = 'github-wp-deployer/v1';
+	const ROUTE_NAMESPACE = 'pushwp/v1';
 
 	/**
 	 * Repository manager.
@@ -89,6 +89,10 @@ final class Webhook {
 
 		if ( null === $repo ) {
 			return new \WP_REST_Response( array( 'error' => 'unknown_repository' ), 404 );
+		}
+
+		if ( empty( $repo['auto_deploy'] ) ) {
+			return new \WP_REST_Response( array( 'error' => 'automatic_deployment_disabled' ), 403 );
 		}
 
 		$signature = (string) $request->get_header( 'x-hub-signature-256' );
@@ -184,7 +188,7 @@ final class Webhook {
 			'webhook',
 			'success',
 			'webhook:' . $delivery,
-			__( 'Push event verified and deployment scheduled.', 'github-wp-deployer' )
+			__( 'Push event verified and deployment scheduled.', 'pushwp' )
 		);
 
 		return new \WP_REST_Response( array( 'status' => 'scheduled' ), 202 );

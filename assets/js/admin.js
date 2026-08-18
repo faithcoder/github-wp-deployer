@@ -12,38 +12,30 @@
 		'save_settings'
 	];
 
-	var labels = {
-		validate_repo: 'Validating repository…',
-		install: 'Installing package…',
-		check_update: 'Checking GitHub…',
-		deploy_now: 'Deploying latest code…',
-		toggle_auto: 'Updating automatic deployment…',
-		remove_repo: 'Removing repository…',
-		clear_logs: 'Clearing log…',
-		save_settings: 'Saving settings…'
-	};
+	var config = window.pushWPAdmin || {};
+	var labels = config.labels || {};
 
 	function submittedAction( form, submitter ) {
-		if ( submitter && submitter.name === 'gwp_deployer_action' ) {
+		if ( submitter && submitter.name === 'pushwp_action' ) {
 			return submitter.value;
 		}
 
-		var field = form.querySelector( 'input[name="gwp_deployer_action"]' );
+		var field = form.querySelector( 'input[name="pushwp_action"]' );
 		return field ? field.value : '';
 	}
 
 	function statusElement( form ) {
-		var existing = document.querySelector( '.gwp-deployer-form-status' );
+		var existing = document.querySelector( '.pushwp-form-status' );
 		if ( existing ) {
 			existing.remove();
 		}
 
 		var status = document.createElement( 'span' );
-		status.className = 'gwp-deployer-form-status';
+		status.className = 'pushwp-form-status';
 		status.setAttribute( 'role', 'status' );
 		status.setAttribute( 'aria-live', 'polite' );
-		var actions = form.closest( '.gwp-deployer-actions' );
-		var actionStatus = actions ? actions.querySelector( '.gwp-deployer-action-status' ) : null;
+		var actions = form.closest( '.pushwp-actions' );
+		var actionStatus = actions ? actions.querySelector( '.pushwp-action-status' ) : null;
 		( actionStatus || form ).appendChild( status );
 		return status;
 	}
@@ -57,7 +49,7 @@
 
 		var status = statusElement( form );
 		status.innerHTML = '<span class="spinner is-active" aria-hidden="true"></span><span></span>';
-		status.lastChild.textContent = labels[ action ] || 'Working…';
+		status.lastChild.textContent = labels[ action ] || config.working || '';
 		return status;
 	}
 
@@ -67,18 +59,23 @@
 		form.querySelectorAll( 'button, input[type="submit"]' ).forEach( function ( control ) {
 			control.disabled = false;
 		} );
-		status.className = 'gwp-deployer-form-status gwp-deployer-form-status__error';
+		status.className = 'pushwp-form-status pushwp-form-status__error';
 		status.textContent = message;
 	}
 
 	document.addEventListener( 'submit', function ( event ) {
 		var form = event.target;
-		if ( ! form.closest || ! form.closest( '.gwp-deployer' ) ) {
+		if ( ! form.closest || ! form.closest( '.pushwp' ) ) {
 			return;
 		}
 
 		var action = submittedAction( form, event.submitter );
 		if ( supportedActions.indexOf( action ) === -1 || form.classList.contains( 'is-busy' ) ) {
+			return;
+		}
+
+		if ( form.dataset.confirm && ! window.confirm( form.dataset.confirm ) ) {
+			event.preventDefault();
 			return;
 		}
 
@@ -113,8 +110,8 @@
 			current.innerHTML = incoming.innerHTML;
 			window.history.replaceState( {}, '', result[ 1 ] );
 			window.scrollTo( { top: 0, behavior: 'smooth' } );
-		} ).catch( function ( error ) {
-			setError( form, status, error.message + ' Please try again.' );
+		} ).catch( function () {
+			setError( form, status, config.failed || '' );
 		} );
 	} );
 }() );

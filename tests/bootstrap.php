@@ -3,14 +3,14 @@
  * Lightweight test bootstrap. Defines only the WordPress primitives required
  * by the pure-logic classes under test.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
 define( 'ABSPATH', sys_get_temp_dir() . '/' );
 define( 'DAY_IN_SECONDS', 86400 );
 define( 'MINUTE_IN_SECONDS', 60 );
 define( 'HOUR_IN_SECONDS', 3600 );
-define( 'GWPD_VERSION', '1.0.0' );
+define( 'PUSHWP_VERSION', '1.0.0' );
 
 if ( ! class_exists( 'WP_Error' ) ) {
 	class WP_Error {

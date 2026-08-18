@@ -2,10 +2,10 @@
 /**
  * Safe extraction and inspection of downloaded packages.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer;
+namespace PushWP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -16,6 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class PackageInspector {
 
+	const MAX_ARCHIVE_ENTRIES = 10000;
+	const MAX_EXTRACTED_BYTES = 250000000;
+
 	/**
 	 * Safely extract an archive into a destination directory.
 	 *
@@ -25,7 +28,7 @@ final class PackageInspector {
 	 */
 	public function extract_archive( $zip_path, $dest_dir ) {
 		if ( ! file_exists( $zip_path ) ) {
-			return new \WP_Error( 'archive_missing', __( 'The archive file could not be found.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'archive_missing', __( 'The archive file could not be found.', 'pushwp' ) );
 		}
 
 		wp_mkdir_p( $dest_dir );
@@ -49,10 +52,17 @@ final class PackageInspector {
 		$res = $zip->open( $zip_path );
 
 		if ( true !== $res ) {
-			return new \WP_Error( 'archive_invalid', __( 'The downloaded archive is not a valid ZIP file.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'archive_invalid', __( 'The downloaded archive is not a valid ZIP file.', 'pushwp' ) );
 		}
 
 		$count = $zip->count();
+		if ( $count > self::MAX_ARCHIVE_ENTRIES ) {
+			$zip->close();
+
+			return new \WP_Error( 'archive_too_many_files', __( 'The archive contains too many files.', 'pushwp' ) );
+		}
+
+		$total_size = 0;
 
 		for ( $i = 0; $i < $count; $i++ ) {
 			$name = $zip->getNameIndex( $i );
@@ -60,7 +70,28 @@ final class PackageInspector {
 			if ( false === $name || ! $this->is_safe_entry( $name ) ) {
 				$zip->close();
 
-				return new \WP_Error( 'archive_unsafe', __( 'The archive contains unsafe paths and was rejected.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'archive_unsafe', __( 'The archive contains unsafe paths and was rejected.', 'pushwp' ) );
+			}
+
+			$stat = $zip->statIndex( $i );
+			if ( is_array( $stat ) && isset( $stat['size'] ) ) {
+				$total_size += (int) $stat['size'];
+				if ( $total_size > self::MAX_EXTRACTED_BYTES ) {
+					$zip->close();
+
+					return new \WP_Error( 'archive_expanded_too_large', __( 'The archive expands beyond the allowed size.', 'pushwp' ) );
+				}
+			}
+
+			$operating_system = 0;
+			$attributes       = 0;
+			if ( $zip->getExternalAttributesIndex( $i, $operating_system, $attributes ) ) {
+				$file_type = ( $attributes >> 16 ) & 0xF000;
+				if ( 0xA000 === $file_type ) {
+					$zip->close();
+
+					return new \WP_Error( 'archive_symlink', __( 'The archive contains symbolic links and was rejected.', 'pushwp' ) );
+				}
 			}
 		}
 
@@ -68,7 +99,7 @@ final class PackageInspector {
 		$zip->close();
 
 		if ( false === $ok ) {
-			return new \WP_Error( 'archive_extract_failed', __( 'The archive could not be extracted.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'archive_extract_failed', __( 'The archive could not be extracted.', 'pushwp' ) );
 		}
 
 		return true;
@@ -89,19 +120,30 @@ final class PackageInspector {
 		$content = $archive->listContent();
 
 		if ( ! is_array( $content ) ) {
-			return new \WP_Error( 'archive_invalid', __( 'The downloaded archive is not a valid ZIP file.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'archive_invalid', __( 'The downloaded archive is not a valid ZIP file.', 'pushwp' ) );
 		}
+
+		if ( count( $content ) > self::MAX_ARCHIVE_ENTRIES ) {
+			return new \WP_Error( 'archive_too_many_files', __( 'The archive contains too many files.', 'pushwp' ) );
+		}
+
+		$total_size = 0;
 
 		foreach ( $content as $entry ) {
 			if ( ! isset( $entry['filename'] ) || ! $this->is_safe_entry( $entry['filename'] ) ) {
-				return new \WP_Error( 'archive_unsafe', __( 'The archive contains unsafe paths and was rejected.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'archive_unsafe', __( 'The archive contains unsafe paths and was rejected.', 'pushwp' ) );
+			}
+
+			$total_size += isset( $entry['size'] ) ? (int) $entry['size'] : 0;
+			if ( $total_size > self::MAX_EXTRACTED_BYTES ) {
+				return new \WP_Error( 'archive_expanded_too_large', __( 'The archive expands beyond the allowed size.', 'pushwp' ) );
 			}
 		}
 
 		$result = $archive->extract( PCLZIP_OPT_PATH, $dest_dir );
 
 		if ( 0 === $result ) {
-			return new \WP_Error( 'archive_extract_failed', __( 'The archive could not be extracted.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'archive_extract_failed', __( 'The archive could not be extracted.', 'pushwp' ) );
 		}
 
 		return true;
@@ -159,13 +201,13 @@ final class PackageInspector {
 
 		if ( '' !== $subdirectory ) {
 			if ( ! $this->is_safe_entry( $subdirectory ) ) {
-				return new \WP_Error( 'subdirectory_invalid', __( 'The subdirectory path is invalid.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'subdirectory_invalid', __( 'The subdirectory path is invalid.', 'pushwp' ) );
 			}
 
 			$root = trailingslashit( $extract_dir ) . $subdirectory;
 
 			if ( ! is_dir( $root ) ) {
-				return new \WP_Error( 'subdirectory_missing', __( 'The configured subdirectory was not found in the archive.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'subdirectory_missing', __( 'The configured subdirectory was not found in the archive.', 'pushwp' ) );
 			}
 
 			return untrailingslashit( $root );
@@ -248,10 +290,10 @@ final class PackageInspector {
 
 		if ( 'plugin' === $forced_type ) {
 			if ( 0 === $plugin_count ) {
-				return new \WP_Error( 'no_plugin', __( 'No valid plugin was found in the repository.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'no_plugin', __( 'No valid plugin was found in the repository.', 'pushwp' ) );
 			}
 			if ( $plugin_count > 1 ) {
-				return new \WP_Error( 'ambiguous_plugin', __( 'Multiple plugins were found. Select the correct subdirectory to disambiguate.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'ambiguous_plugin', __( 'Multiple plugins were found. Select the correct subdirectory to disambiguate.', 'pushwp' ) );
 			}
 
 			return $this->result_for_plugin( $plugins[0] );
@@ -259,29 +301,29 @@ final class PackageInspector {
 
 		if ( 'theme' === $forced_type ) {
 			if ( 0 === $theme_count ) {
-				return new \WP_Error( 'no_theme', __( 'No valid theme was found in the repository.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'no_theme', __( 'No valid theme was found in the repository.', 'pushwp' ) );
 			}
 			if ( $theme_count > 1 ) {
-				return new \WP_Error( 'ambiguous_theme', __( 'Multiple themes were found. Select the correct subdirectory to disambiguate.', 'github-wp-deployer' ) );
+				return new \WP_Error( 'ambiguous_theme', __( 'Multiple themes were found. Select the correct subdirectory to disambiguate.', 'pushwp' ) );
 			}
 
 			return $this->result_for_theme( $themes[0] );
 		}
 
 		if ( 0 === $plugin_count && 0 === $theme_count ) {
-			return new \WP_Error( 'no_package', __( 'The repository does not contain a recognizable WordPress plugin or theme.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'no_package', __( 'The repository does not contain a recognizable WordPress plugin or theme.', 'pushwp' ) );
 		}
 
 		if ( $plugin_count > 0 && $theme_count > 0 ) {
-			return new \WP_Error( 'ambiguous_package', __( 'The repository contains both a plugin and a theme. Choose a deployment type or subdirectory.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'ambiguous_package', __( 'The repository contains both a plugin and a theme. Choose a deployment type or subdirectory.', 'pushwp' ) );
 		}
 
 		if ( $plugin_count > 1 ) {
-			return new \WP_Error( 'ambiguous_plugin', __( 'Multiple plugins were found. Select the correct subdirectory to disambiguate.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'ambiguous_plugin', __( 'Multiple plugins were found. Select the correct subdirectory to disambiguate.', 'pushwp' ) );
 		}
 
 		if ( $theme_count > 1 ) {
-			return new \WP_Error( 'ambiguous_theme', __( 'Multiple themes were found. Select the correct subdirectory to disambiguate.', 'github-wp-deployer' ) );
+			return new \WP_Error( 'ambiguous_theme', __( 'Multiple themes were found. Select the correct subdirectory to disambiguate.', 'pushwp' ) );
 		}
 
 		if ( 1 === $plugin_count ) {

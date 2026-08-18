@@ -2,12 +2,12 @@
 /**
  * Slug validation tests.
  *
- * @package GitHubWPDeployer
+ * @package PushWP
  */
 
-namespace GitHubWPDeployer\Tests;
+namespace PushWP\Tests;
 
-use GitHubWPDeployer\Utils\Slug;
+use PushWP\Utils\Slug;
 use PHPUnit\Framework\TestCase;
 
 final class SlugTest extends TestCase {
